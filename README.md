@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/noirbizarre/pdm-dockerize/actions/workflows/ci.yml/badge.svg)](https://github.com/noirbizarre/pdm-dockerize/actions/workflows/ci.yml)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/noirbizarre/pdm-dockerize/main.svg)](https://results.pre-commit.ci/latest/github/noirbizarre/pdm-dockerize/main)
-[![Documentation Status](https://readthedocs.org/projects/pdm-dockerize/badge/?version=latest)](https://pdm-dockerize.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/pdm-dockerize)](https://pypi.org/project/pdm-dockerize/)
 [![PyPI - License](https://img.shields.io/pypi/l/pdm-dockerize)](https://pypi.org/project/pdm-dockerize/)
 
@@ -41,7 +40,6 @@ pdm self install pdm-dockerize
 Either as a local plugin in your project:
 
 ```toml
-# pyproject.toml
 [tool.pdm]
 plugins = [
     "pdm-dockerize",
