@@ -1,0 +1,195 @@
+[project]
+name = "pdm-dockerize"
+description = "Help generating docker images from PDM projects"
+authors = [
+    {name = "Axel Haustant", email = "noirbizarre@gmail.com"},
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+keywords = []
+dynamic = ["version"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Plugins",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Code Generators",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "pdm~=2.0",
+]
+[project.urls]
+Homepage = "https://github.com/noirbizarre/pdm-dockerize"
+Documentation = "https://github.com/noirbizarre/pdm-dockerize#readme"
+Repository = "https://github.com/noirbizarre/pdm-dockerize"
+Issues = "https://github.com/noirbizarre/pdm-dockerize/issues"
+
+[project.entry-points.pdm]
+dockerize = "pdm_dockerize:plugin"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm.version]
+source = "scm"
+write_to = "pdm_dockerize/VERSION"
+
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pdm[pytest]",
+    "pytest>=7.1.2",
+    "pytest-sugar>=0.9.5",
+    "pytest-cov>=3.0.0",
+    "syrupy>=3.0.6",
+]
+lint = [
+    "black>=23.7.0",
+    "codespell>=2.2.6",
+    "mypy>=1.5.1",
+    "ruff>=0.1.7",
+    "tomli; python_version<'3.11'",
+]
+tox = [
+    "tox",
+    "tox-pdm>=0.5",
+]
+release = [
+    "emotional",
+]
+
+
+[tool.pdm.scripts]
+test.help = "Run the test suite"
+test.cmd = "pytest"
+
+lint.help = "Lint all tracked files using pre-commit"
+lint.cmd = "pre-commit run --all-files"
+
+format.help = "Format the code according to known rules"
+format.composite = [
+    "codespell --write-changes",
+    "ruff --fix-only --show-fixes src tests",
+    "black src tests",
+]
+
+typing.help = "Full typing linting (includes imported packages and uncommmited files)"
+typing.cmd = "mypy src tests --warn-unused-ignores"
+
+cover.help = "Run the test suite with coverage"
+pre_cover = "coverage erase"
+cover.composite = [
+  """
+  test
+    --cov
+    --cov-report=term
+    --cov-report=html:reports/coverage
+    --cov-report=xml:reports/coverage.xml
+    --no-cov-on-fail
+    --junitxml=reports/tests.xml
+  """
+]
+
+"cover:all".help = "Run the test suite against all supported Python version"
+"pre_cover:all" = "coverage erase"
+"cover:all".cmd = "tox --parallel"
+
+changelog.help = "Update the changelog"
+changelog.cmd = "cz changelog"
+
+
+[tool.commitizen]
+name = "emotional"
+github = "noirbizarre/pdm-dockerize"
+order_by_scope = true
+version_provider = "scm"
+major_version_zero = true  # Remove this line for the first 1.x release
+
+
+[tool.pdm.ide]
+linters = ["ruff"]
+formatter = "black"
+testing = "pytest"
+
+
+[tool.pdm.dockerize]
+include = "*"
+
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+norecursedirs = ".git build dist"
+testpaths = [
+  "src/",
+  "tests/",
+]
+
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = [
+  "tests/*",
+]
+
+[tool.coverage.report]
+exclude_also = [
+  'def __repr__',
+  'if TYPE_CHECKING:',
+]
+ignore_errors = true
+
+
+[tool.black]
+# Black adds 10% tolernace which makes it to 110
+# See:
+#  https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html#line-length
+line-length = 100
+
+
+[tool.ruff]
+line-length = 110
+respect-gitignore = true
+select = [
+    # Pyflakes
+    "F",
+    # Pycodestyle
+    "E",
+    "W",
+    # McCabe # fake8-comprehension
+    "C",
+    # Pyupgrade
+    "UP",
+    # isort
+    "I001"
+]
+src = ["src", "tests"]
+
+[tool.ruff.isort]
+known-first-party = ["pdm_dockerize"]
+known-third-party = ["pytest", "syrupy"]
+
+
+[tool.mypy]
+exclude = [
+  "docs",
+  "build",
+  "dist",
+]
+
+
+[tool.codespell]
+skip = '*.po,*.ts,./src/3rdParty,./reports'
