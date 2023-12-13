@@ -1,0 +1,22 @@
+# Changes here will be overwritten by Copier
+_commit: c9511f3
+_src_path: copier.templates/python.copier
+author_email: noirbizarre@gmail.com
+author_fullname: Axel Haustant
+author_username: noirbizarre
+copyright_license: MIT License
+has_docs: false
+is_cli: false
+is_lib: true
+is_private: false
+project_description: Help generating docker image from PDM projects
+project_name: pdm-dockerize
+project_slug: pdm-dockerize
+python_distribution: pdm-dockerize
+python_package: pdm_dockerize
+repository_name: pdm-dockerize
+repository_namespace: noirbizarre
+repository_provider: github.com
+use_src: true
+
+# End

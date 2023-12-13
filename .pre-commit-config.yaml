@@ -1,0 +1,75 @@
+ci:
+  autoupdate_schedule: weekly
+  autoupdate_commit_msg: 'ci(pre-commit): pre-commit.ci autoupdate'
+  autofix_commit_msg: 'ci(pre-commit): pre-commit.ci autofixes'
+
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
+  - pre-push
+
+default_stages:
+  - commit
+  - push
+
+repos:
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+        exclude: "tests/data/.+"
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: debug-statements
+      - id: check-toml
+      - id: detect-private-key
+
+  - repo: https://github.com/pdm-project/pdm
+    rev: 2.10.4
+    hooks:
+      - id: pdm-lock-check
+
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.10.0
+    hooks:
+      - id: commitizen
+        additional_dependencies:
+          - emotional
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.27.0
+    hooks:
+      - id: check-github-workflows
+      - id: check-dependabot
+
+  - repo: https://github.com/psf/black
+    rev: 23.9.1
+    hooks:
+      - id: black
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.292
+    hooks:
+      - id: ruff
+        args: [--fix]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.6.0
+    hooks:
+      - id: mypy
+        exclude: docs/.*\.pyi?$
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+    - id: codespell
+      additional_dependencies:
+        - tomli
+      args: ["--write-changes"]
+      exclude: CHANGELOG\.md
