@@ -44,8 +44,11 @@ def project_entrypoint(project: Project, hooks: HookManager) -> str:
     runner = TaskRunner(project, hooks=hooks)
 
     out.write("#!/bin/sh\n\n")
+    out.write(python_env())
+    out.write("\n")
     out.write(usage(project, runner))
-    out.write("\ncase ${1} in\n")
+    out.write("\n")
+    out.write("case ${1} in\n")
 
     for script in select_scripts(project):
         task = runner.get_task(script)
@@ -56,6 +59,14 @@ def project_entrypoint(project: Project, hooks: HookManager) -> str:
     out.write(f"{2 * INDENT};;\n")
     out.write("esac\n")
 
+    return out.getvalue()
+
+
+def python_env() -> str:
+    """Generate the environment variables statements"""
+    out = io.StringIO()
+    out.write("export PYTHONPATH=./lib\n")
+    out.write("export PATH=./bin:$PATH\n")
     return out.getvalue()
 
 
