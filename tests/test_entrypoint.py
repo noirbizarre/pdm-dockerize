@@ -58,6 +58,8 @@ FILTER_CASES = (
     FilterCase("include-list", include=["test", "ns:task1"]),
     FilterCase("exclude-all", include="*", exclude="*"),
     FilterCase("exclude-list", include="*", exclude=["test", "ns:task1"]),
+    FilterCase("include-all-but-prefix", include="*", exclude="ns:*"),
+    FilterCase("include-prefix-except", include="ns:*", exclude="ns:task1"),
 )
 
 
