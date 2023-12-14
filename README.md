@@ -72,7 +72,7 @@ WORKDIR /project
 
 # install PDM
 RUN pip install -U pip setuptools wheel
-RUN pip install pdm
+RUN pip install pdm pdm-dockerize
 
 RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=pdm.lock,target=pdm.lock \
