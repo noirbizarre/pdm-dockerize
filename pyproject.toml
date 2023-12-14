@@ -108,7 +108,7 @@ cover.composite = [
 "cover:all".cmd = "tox --parallel"
 
 changelog.help = "Update the changelog"
-changelog.cmd = "cz changelog"
+changelog.cmd = "cz changelog --incremental"
 
 
 [tool.commitizen]
