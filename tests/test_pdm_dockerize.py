@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -12,13 +14,11 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def project(project: Project, pdm: PDMCallable) -> Project:
+def project(project: Project) -> Project:
     project.pyproject.settings["dockerize"] = {"include": "*"}
     project.pyproject.metadata["requires-python"] = ">=3.8"
     project.pyproject.metadata["dependencies"] = ["Faker"]
     project.pyproject.settings["scripts"] = {"test": "pytest"}
-    project.pyproject.write()
-    pdm("lock", obj=project, strict=True)
     return project
 
 
@@ -29,11 +29,11 @@ def test_expose_version():
 
 
 def test_generate_docker_dist(project: Project, pdm: PDMCallable, snapshot: SnapshotAssertion):
-    result = pdm("dockerize", obj=project, strict=True)
+    project.pyproject.settings["dockerize"]["include_bins"] = "*"
+    project.pyproject.write()
+    pdm("lock", obj=project, strict=True)
 
-    if result.exception:
-        raise result.exception
-    assert result.exit_code == 0
+    pdm("dockerize", obj=project, strict=True)
 
     dist = project.root / "dist/docker"
     assert dist.is_dir()
@@ -55,12 +55,13 @@ def test_generate_docker_dist(project: Project, pdm: PDMCallable, snapshot: Snap
 def test_generate_docker_dist_to_target(
     project: Project, pdm: PDMCallable, snapshot: SnapshotAssertion, tmp_path: Path
 ):
-    target = tmp_path / "target"
-    result = pdm(f"dockerize {target}", obj=project, strict=True)
+    project.pyproject.settings["dockerize"]["include_bins"] = "*"
+    project.pyproject.write()
+    pdm("lock", obj=project, strict=True)
 
-    if result.exception:
-        raise result.exception
-    assert result.exit_code == 0
+    target = tmp_path / "target"
+
+    pdm(f"dockerize {target}", obj=project, strict=True)
 
     dist = project.root / "dist/docker"
     assert not dist.exists()
@@ -77,3 +78,60 @@ def test_generate_docker_dist_to_target(
     bin = target / "bin"
     assert bin.is_dir()
     assert (bin / "faker").is_file()
+
+
+@dataclass
+class BinFilterCase:
+    id: str
+    include: str | list[str] | None = None
+    exclude: str | list[str] | None = None
+    expected: list[str] = field(default_factory=list)
+
+
+BIN_FILTER_CASES = (
+    BinFilterCase("no-filter"),
+    BinFilterCase(
+        "include-all", include="*", expected=["black", "blackd", "faker", "pytest", "py.test"]
+    ),
+    BinFilterCase("include-list", include=["faker", "black"], expected=["faker", "black"]),
+    BinFilterCase("exclude-all", include="*", exclude="*"),
+    BinFilterCase(
+        "exclude-list",
+        include="*",
+        exclude=["any", "blackd"],
+        expected=["black", "pytest", "py.test", "faker"],
+    ),
+    BinFilterCase(
+        "include-all-but-prefix", include="*", exclude="py*", expected=["black", "blackd", "faker"]
+    ),
+    BinFilterCase(
+        "include-prefix-except",
+        include="py*",
+        exclude="py",
+        expected=["pytest", "py.test"],
+    ),
+)
+
+
+@pytest.mark.parametrize("case", [pytest.param(case, id=case.id) for case in BIN_FILTER_CASES])
+def test_binaries_filtering(project: Project, pdm: PDMCallable, case: BinFilterCase):
+    project.pyproject.metadata["dependencies"] = ["Faker", "pytest", "black"]
+    if case.include:
+        project.pyproject.settings["dockerize"]["include_bins"] = case.include
+    if case.exclude:
+        project.pyproject.settings["dockerize"]["exclude_bins"] = case.exclude
+    project.pyproject.write()
+
+    pdm("lock", obj=project, strict=True)
+    pdm("dockerize", obj=project, strict=True)
+
+    bindir = project.root / "dist/docker/bin"
+    if bindir.exists():
+        print(list(bindir.iterdir()))
+        bins = [
+            bin.name for bin in bindir.iterdir() if not bin.is_dir() and os.access(bin, os.X_OK)
+        ]
+    else:
+        bins = []
+
+    assert set(bins) == set(case.expected)

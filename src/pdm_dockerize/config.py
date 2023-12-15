@@ -8,10 +8,10 @@ class DockerizeSettings(TypedDict):
     """List of command patterns to include"""
 
     exclude: str | list[str] | None
-    """List of command patterns to include"""
+    """List of command patterns to exclude"""
 
     include_bins: str | list[str] | None
-    """List of bin patterns to include"""
+    """List of binaries patterns to include"""
 
     exclude_bins: str | list[str] | None
-    """List of bin patterns to include"""
+    """List of binanries patterns to exclude"""

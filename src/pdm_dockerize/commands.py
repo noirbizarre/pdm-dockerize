@@ -7,18 +7,13 @@ from pdm.cli import actions
 from pdm.cli.commands.base import BaseCommand
 from pdm.cli.filters import GroupSelection
 from pdm.cli.hooks import HookManager
-from pdm.cli.options import (
-    Option,
-    dry_run_option,
-    groups_group,
-    lockfile_option,
-)
+from pdm.cli.options import Option, dry_run_option, groups_group, lockfile_option
 from pdm.cli.utils import check_project_file
 from pdm.environments import PythonLocalEnvironment
-from pdm.installers import Synchronizer
 from pdm.project import Project
 
-from pdm_dockerize.entrypoint import project_entrypoint
+from .entrypoint import project_entrypoint
+from .installer import DockerizeSynchronizer
 
 
 class DockerizeEnvironment(PythonLocalEnvironment):
@@ -62,7 +57,7 @@ class DockerizeCommand(BaseCommand):
         for group in selection:
             requirements.extend(project.get_dependencies(group).values())
         candidates = actions.resolve_candidates_from_lockfile(project, requirements)
-        synchronizer = Synchronizer(
+        synchronizer = DockerizeSynchronizer(
             candidates,
             env,
             dry_run=options.dry_run,

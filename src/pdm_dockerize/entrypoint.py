@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import io
 import re
-from fnmatch import fnmatch
 from typing import TYPE_CHECKING
 
 from pdm.cli.commands.run import TaskRunner
+
+from . import filters
 
 if TYPE_CHECKING:
     from pdm.cli.commands.run import Task
     from pdm.cli.hooks import HookManager
     from pdm.project import Project
+
+    from .config import DockerizeSettings
 
 
 INDENT = 4 * " "
@@ -21,21 +24,12 @@ def select_scripts(project: Project) -> list[list]:
     """
     List all scripts eligible to docker entryopint according filtering
     """
-    dockerize = project.pyproject.settings.get("dockerize", {})
-    include = dockerize.get("include") or []
-    if isinstance(include, str):
-        include = [include]
-    exclude = dockerize.get("exclude") or []
-    if isinstance(exclude, str):
-        exclude = [exclude]
-
+    settings: DockerizeSettings = project.pyproject.settings.get("dockerize", {})
+    include = filters.parse(settings, "include")
+    exclude = filters.parse(settings, "exclude")
     scripts = project.pyproject.settings.get("scripts", {}).keys()
-    included = [
-        script for script in scripts if any(fnmatch(script, pattern) for pattern in include)
-    ]
-    return [
-        script for script in included if not any(fnmatch(script, pattern) for pattern in exclude)
-    ]
+    included = [script for script in scripts if filters.match(script, include)]
+    return [script for script in included if not filters.match(script, exclude)]
 
 
 def project_entrypoint(project: Project, hooks: HookManager) -> str:
