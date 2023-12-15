@@ -3,9 +3,9 @@
 export PYTHONPATH=./lib
 export PATH=./bin:$PATH
 
-function usage() {
+usage() {
     echo "Available commands"
-    echo -e "==================\n"
+    echo "=================="
     echo "ns:task2: ns:task2"
     echo "ns:task3: ns:task3"
 }

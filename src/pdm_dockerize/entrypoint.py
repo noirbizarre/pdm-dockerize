@@ -67,16 +67,16 @@ def python_env() -> str:
 def usage(project: Project, runner: TaskRunner) -> str:
     """Render the entrypoint usage/help"""
     out = io.StringIO()
-    out.write("function usage() {\n")
+    out.write("usage() {\n")
     out.write(f'{INDENT}echo "Available commands"\n')
-    out.write(f'{INDENT}echo -e "==================\\n"\n')
+    out.write(f'{INDENT}echo "=================="\n')
 
     for script in select_scripts(project):
         task = runner.get_task(script)
         if task is None:
             continue
         if task.kind == "cmd" and isinstance(task.args, list):
-            out.write(f"{INDENT}echo \"{script}: {' '.join(task.args)}\"\n")
+            out.write(f'{INDENT}echo "{script}: {" ".join(task.args)}"\n')
         else:
             out.write(f'{INDENT}echo "{script}: {task.short_description}"\n')
     out.write("}\n")

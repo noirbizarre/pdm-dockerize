@@ -3,9 +3,9 @@
 export PYTHONPATH=./lib
 export PATH=./bin:$PATH
 
-function usage() {
+usage() {
     echo "Available commands"
-    echo -e "==================\n"
+    echo "=================="
 }
 
 case ${1} in
