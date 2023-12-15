@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 from pdm.cli import actions
@@ -73,3 +74,4 @@ class DockerizeCommand(BaseCommand):
 
         entrypoint = env.packages_path / "entrypoint"
         entrypoint.write_text(project_entrypoint(project, hooks))
+        os.chmod(entrypoint, 0o555)

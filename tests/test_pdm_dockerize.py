@@ -40,6 +40,7 @@ def test_generate_docker_dist(project: Project, pdm: PDMCallable, snapshot: Snap
 
     entrypoint = dist / "entrypoint"
     assert entrypoint.exists()
+    assert os.access(entrypoint, os.X_OK)
     assert entrypoint.read_text() == snapshot
 
     lib = dist / "lib"
@@ -68,6 +69,7 @@ def test_generate_docker_dist_to_target(
 
     entrypoint = target / "entrypoint"
     assert entrypoint.exists()
+    assert os.access(entrypoint, os.X_OK)
     assert entrypoint.read_text() == snapshot
 
     lib = target / "lib"
