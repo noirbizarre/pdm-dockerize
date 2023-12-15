@@ -4,12 +4,11 @@ import io
 import re
 from typing import TYPE_CHECKING
 
-from pdm.cli.commands.run import TaskRunner
+from pdm.cli.commands.run import TaskRunner, exec_opts
 
 from . import filters
 
 if TYPE_CHECKING:
-    from pdm.cli.commands.run import Task
     from pdm.cli.hooks import HookManager
     from pdm.project import Project
 
@@ -20,7 +19,7 @@ INDENT = 4 * " "
 RE_CALL = re.compile(r"(?P<pkg>[\w\d_.]+):(?P<fn>[\w\d_]+)(?:\((?P<args>.*?)\))?")
 
 
-def select_scripts(project: Project) -> list[list]:
+def select_scripts(project: Project) -> list[str]:
     """
     List all scripts eligible to docker entryopint according filtering
     """
@@ -28,6 +27,7 @@ def select_scripts(project: Project) -> list[list]:
     include = filters.parse(settings, "include")
     exclude = filters.parse(settings, "exclude")
     scripts = project.pyproject.settings.get("scripts", {}).keys()
+    scripts = [script for script in scripts if script != "_"]
     included = [script for script in scripts if filters.match(script, include)]
     return [script for script in included if not filters.match(script, exclude)]
 
@@ -45,8 +45,7 @@ def project_entrypoint(project: Project, hooks: HookManager) -> str:
     out.write("case ${1} in\n")
 
     for script in select_scripts(project):
-        task = runner.get_task(script)
-        out.write(case(task))
+        out.write(case(runner, script))
 
     out.write(f"{INDENT}*)\n")
     out.write(f"{2 * INDENT}usage\n")
@@ -83,17 +82,19 @@ def usage(project: Project, runner: TaskRunner) -> str:
     return out.getvalue()
 
 
-def case(task: Task) -> str:
+def case(runner: TaskRunner, script: str) -> str:
     """Render a script case for a given task"""
+    task = runner.get_task(script)
+    opts = exec_opts(runner.global_options, task.options)
     out = io.StringIO()
     out.write(f"{INDENT}{task.name})\n")
 
-    if (envfile := task.options.get("env_file")) and isinstance(envfile, str):
+    if (envfile := opts.get("env_file")) and isinstance(envfile, str):
         out.write(f"{2 * INDENT}set -o allexport\n")
         out.write(f"{2 * INDENT}source {envfile}\n")
         out.write(f"{2 * INDENT}set +o allexport\n")
 
-    for var, value in task.options.get("env", {}).items():
+    for var, value in opts.get("env", {}).items():
         out.write(f'{2 * INDENT}{var}="{value}"\n')
 
     if isinstance(envfile, dict) and (override := envfile.get("override")):

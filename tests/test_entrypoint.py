@@ -27,7 +27,15 @@ CASES = {
     "call-with-arguments": {"test": {"call": "my.app:main('dev', key='value')"}},
     "composite": {"test": {"composite": ["first", "second"]}},
     "env": {"test": {"cmd": "pytest", "env": {"WHATEVER": "42", "OTHER": "value"}}},
+    "shared-env": {
+        "_": {"env": {"WHATEVER": "42", "OTHER": "value"}},
+        "test": {"cmd": "pytest", "env": {"OTHER": "new-value"}},
+    },
     "env_file": {"test": {"cmd": "pytest", "env_file": ".env"}},
+    "shared-env_file": {
+        "_": {"env_file": ".env"},
+        "test": {"cmd": "pytest"},
+    },
     "env_file-override": {"test": {"cmd": "pytest", "env_file": {"override": ".env"}}},
     "env_file-precedance": {
         "test": {"cmd": "pytest", "env": {"WHATEVER": "42"}, "env_file": ".env"}
