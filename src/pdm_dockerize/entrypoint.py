@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import io
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pdm.cli.commands.run import TaskRunner, exec_opts
 
 from . import filters
 
 if TYPE_CHECKING:
+    from pdm.cli.commands.run import Task
     from pdm.cli.hooks import HookManager
     from pdm.project import Project
 
@@ -85,10 +86,23 @@ def usage(project: Project, runner: TaskRunner) -> str:
 def case(runner: TaskRunner, script: str) -> str:
     """Render a script case for a given task"""
     task = runner.get_task(script)
-    opts = exec_opts(runner.global_options, task.options)
     out = io.StringIO()
     out.write(f"{INDENT}{task.name})\n")
 
+    if pre := runner.get_task(f"pre_{script}"):
+        out.write(as_script(pre, exec_opts(runner.global_options, pre.options)))
+
+    out.write(as_script(task, exec_opts(runner.global_options, task.options)))
+
+    if post := runner.get_task(f"post_{script}"):
+        out.write(as_script(post, exec_opts(runner.global_options, post.options)))
+
+    out.write(f"{2 * INDENT};;\n")
+    return out.getvalue()
+
+
+def as_script(task: Task, opts: dict[str, Any]):
+    out = io.StringIO()
     if (envfile := opts.get("env_file")) and isinstance(envfile, str):
         out.write(f"{2 * INDENT}set -o allexport\n")
         out.write(f"{2 * INDENT}source {envfile}\n")
@@ -116,5 +130,4 @@ def case(runner: TaskRunner, script: str) -> str:
             out.write(f"{2 * INDENT}{cmd}\n")
     else:
         out.write(f"{2 * INDENT}{task.args}\n")
-    out.write(f"{2 * INDENT};;\n")
     return out.getvalue()

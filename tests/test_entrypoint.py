@@ -43,6 +43,11 @@ CASES = {
     "env_file-override-precedance": {
         "test": {"cmd": "pytest", "env": {"WHATEVER": "42"}, "env_file": {"override": ".env"}}
     },
+    "pre-post": {
+        "pre_test": "pre",
+        "test": "pytest",
+        "post_test": "post",
+    },
 }
 
 
