@@ -13,7 +13,7 @@ from pdm.cli.utils import check_project_file
 from pdm.environments import PythonLocalEnvironment
 from pdm.project import Project
 
-from .entrypoint import project_entrypoint
+from .entrypoint import ProjectEntrypoint
 from .installer import DockerizeSynchronizer
 
 
@@ -73,5 +73,5 @@ class DockerizeCommand(BaseCommand):
         synchronizer.synchronize()
 
         entrypoint = env.packages_path / "entrypoint"
-        entrypoint.write_text(project_entrypoint(project, hooks))
+        entrypoint.write_text(ProjectEntrypoint(project, hooks).as_script())
         os.chmod(entrypoint, 0o555)

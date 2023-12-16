@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 from pdm.cli.hooks import HookManager
 
-from pdm_dockerize.entrypoint import project_entrypoint
+from pdm_dockerize.entrypoint import ProjectEntrypoint
 
 if TYPE_CHECKING:
     from pdm.project import Project
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 def entrypoint_for(project: Project, hooks: HookManager | None = None) -> str:
-    return project_entrypoint(project, hooks or HookManager(project))
+    return str(ProjectEntrypoint(project, hooks or HookManager(project)))
 
 
 CASES = {
