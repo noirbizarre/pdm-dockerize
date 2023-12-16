@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import re
+import shlex
 from typing import TYPE_CHECKING, Any
 
 from pdm.cli.commands.run import TaskRunner, exec_opts
@@ -76,9 +77,12 @@ def usage(project: Project, runner: TaskRunner) -> str:
         if task is None:
             continue
         if task.kind == "cmd" and isinstance(task.args, list):
-            out.write(f'{INDENT}echo "{script}: {" ".join(task.args)}"\n')
+            description = " ".join(task.args)
         else:
-            out.write(f'{INDENT}echo "{script}: {task.short_description}"\n')
+            description = task.short_description
+        if "\n" in description:
+            description = f"{description.splitlines()[0]}…"
+        out.write(f'{INDENT}echo "{script}: {description}"\n')
     out.write("}\n")
     return out.getvalue()
 
@@ -123,11 +127,14 @@ def as_script(task: Task, opts: dict[str, Any]):
         fn = m.group("fn")
         args = m.group("args") or ""
         out.write(f'{2 * INDENT}python -c "from {pkg} import {fn}; {fn}({args})"\n')
-    elif task.kind == "cmd" and isinstance(task.args, list):
-        out.write(f"{2 * INDENT}{' '.join(task.args)}\n")
+    elif task.kind == "cmd":
+        args = task.args if isinstance(task.args, list) else shlex.split(task.args)
+        out.write(f"{2 * INDENT}{' '.join(args)}\n")
     elif task.kind == "composite":
         for cmd in task.args:
-            out.write(f"{2 * INDENT}{cmd}\n")
+            normalized = " ".join(shlex.split(cmd))
+            out.write(f"{2 * INDENT}{normalized}\n")
     else:
-        out.write(f"{2 * INDENT}{task.args}\n")
+        for line in task.args.splitlines():
+            out.write(f"{2 * INDENT}{line}\n")
     return out.getvalue()

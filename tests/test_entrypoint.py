@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -47,6 +48,35 @@ CASES = {
         "pre_test": "pre",
         "test": "pytest",
         "post_test": "post",
+    },
+    "whitespaces": {
+        "cmd": dedent(
+            """\
+            whitespaces
+                are
+                    ignored
+            """
+        ),
+        "shell": {
+            "shell": dedent(
+                """\
+                whitespaces
+                    should be
+                preserved
+                """
+            )
+        },
+        "composite": {
+            "composite": [
+                dedent(
+                    """\
+                    whitespaces
+                        are
+                            ignored
+                    """
+                )
+            ]
+        },
     },
 }
 
