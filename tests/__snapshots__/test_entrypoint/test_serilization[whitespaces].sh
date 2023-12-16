@@ -1,7 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 export PYTHONPATH=./lib
 export PATH=./bin:$PATH
+
+cmd=$1
+shift
 
 usage() {
     echo "Available commands"
@@ -11,17 +14,17 @@ usage() {
     echo "composite: whitespaces…"
 }
 
-case ${1} in
+case $cmd in
     cmd)
-        whitespaces are ignored
+        whitespaces are ignored "$@"
         ;;
     shell)
         whitespaces
             should be
-        preserved
+        preserved "$@"
         ;;
     composite)
-        whitespaces are ignored
+        whitespaces are ignored "$@"
         ;;
     *)
         usage

@@ -1,7 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 export PYTHONPATH=./lib
 export PATH=./bin:$PATH
+
+cmd=$1
+shift
 
 usage() {
     echo "Available commands"
@@ -9,13 +12,13 @@ usage() {
     echo "test: pytest"
 }
 
-case ${1} in
+case $cmd in
     test)
         WHATEVER="42"
         set -o allexport
         source .env
         set +o allexport
-        pytest
+        pytest "$@"
         ;;
     *)
         usage

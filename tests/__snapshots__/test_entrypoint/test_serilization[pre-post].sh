@@ -1,7 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 export PYTHONPATH=./lib
 export PATH=./bin:$PATH
+
+cmd=$1
+shift
 
 usage() {
     echo "Available commands"
@@ -11,17 +14,17 @@ usage() {
     echo "post_test: post"
 }
 
-case ${1} in
+case $cmd in
     pre_test)
-        pre
+        pre "$@"
         ;;
     test)
-        pre
-        pytest
-        post
+        pre "$@"
+        pytest "$@"
+        post "$@"
         ;;
     post_test)
-        post
+        post "$@"
         ;;
     *)
         usage

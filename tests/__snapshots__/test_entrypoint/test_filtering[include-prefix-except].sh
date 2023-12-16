@@ -1,7 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 export PYTHONPATH=./lib
 export PATH=./bin:$PATH
+
+cmd=$1
+shift
 
 usage() {
     echo "Available commands"
@@ -10,12 +13,12 @@ usage() {
     echo "ns:task3: ns:task3"
 }
 
-case ${1} in
+case $cmd in
     ns:task2)
-        ns:task2
+        ns:task2 "$@"
         ;;
     ns:task3)
-        ns:task3
+        ns:task3 "$@"
         ;;
     *)
         usage

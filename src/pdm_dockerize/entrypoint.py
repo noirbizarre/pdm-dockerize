@@ -54,12 +54,15 @@ class ProjectEntrypoint:
         """Render the `sh` entrypoint"""
         out = io.StringIO()
 
-        out.write("#!/bin/sh\n\n")
+        out.write("#!/usr/bin/env sh\n\n")
         out.write(self.python_env())
+        out.write("\n")
+        out.write("cmd=$1\n")
+        out.write("shift\n")
         out.write("\n")
         out.write(self.usage())
         out.write("\n")
-        out.write("case ${1} in\n")
+        out.write("case $cmd in\n")
 
         for script in self.select_scripts():
             out.write(self.case(script))
@@ -116,7 +119,7 @@ class ProjectEntrypoint:
         out.write(f"{2 * INDENT};;\n")
         return out.getvalue()
 
-    def script_for(self, task: Task, args: str = "") -> str:
+    def script_for(self, task: Task, params: str = '"$@"') -> str:
         """Render the script part for a single task"""
         out = io.StringIO()
         opts = exec_opts(self.runner.global_options, task.options)
@@ -130,13 +133,13 @@ class ProjectEntrypoint:
             out.write(self.source_env(override))
 
         if task.kind == "call":
-            out.write(self.call_script(task))
+            out.write(self.call_script(task, params))
         elif task.kind == "cmd":
-            out.write(self.cmd_script(task))
+            out.write(self.cmd_script(task, params))
         elif task.kind == "composite":
-            out.write(self.composite_script(task))
+            out.write(self.composite_script(task, params))
         else:
-            out.write(self.shell_script(task))
+            out.write(self.shell_script(task, params))
         return out.getvalue()
 
     def source_env(self, envfile: str) -> str:
@@ -146,11 +149,11 @@ class ProjectEntrypoint:
         out.write(f"{2 * INDENT}set +o allexport\n")
         return out.getvalue()
 
-    def cmd_script(self, task: Task) -> str:
+    def cmd_script(self, task: Task, params: str = '"$@"') -> str:
         args = task.args if isinstance(task.args, list) else shlex.split(task.args)
-        return f"{2 * INDENT}{' '.join(args)}\n"
+        return f"{2 * INDENT}{' '.join(args)} {params}\n"
 
-    def call_script(self, task: Task) -> str:
+    def call_script(self, task: Task, params: str = '"$@"') -> str:
         if not (m := RE_CALL.match(task.args)):
             raise ValueError("Unparsable call task {tasks.name}: {tasks.args}")
         pkg = m.group("pkg")
@@ -158,16 +161,20 @@ class ProjectEntrypoint:
         args = m.group("args") or ""
         return f'{2 * INDENT}python -c "from {pkg} import {fn}; {fn}({args})"\n'
 
-    def shell_script(self, task: Task) -> str:
+    def shell_script(self, task: Task, params: str = '"$@"') -> str:
         out = io.StringIO()
-        for line in task.args.splitlines():
-            out.write(f"{2 * INDENT}{line}\n")
+        lines = task.args.splitlines()
+        for idx, line in enumerate(lines, 1):
+            out.write(f"{2 * INDENT}{line}")
+            if idx == len(lines):
+                out.write(f" {params}")
+            out.write("\n")
         return out.getvalue()
 
-    def composite_script(self, task: Task) -> str:
+    def composite_script(self, task: Task, params: str = '"$@"') -> str:
         out = io.StringIO()
         for cmd in task.args:
             args = shlex.split(cmd)
             normalized = " ".join(args)
-            out.write(f"{2 * INDENT}{normalized}\n")
+            out.write(f"{2 * INDENT}{normalized} {params}\n")
         return out.getvalue()
