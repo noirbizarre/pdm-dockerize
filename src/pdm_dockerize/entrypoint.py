@@ -145,7 +145,7 @@ class ProjectEntrypoint:
     def source_env(self, envfile: str) -> str:
         out = io.StringIO()
         out.write(f"{2 * INDENT}set -o allexport\n")
-        out.write(f"{2 * INDENT}. {envfile}\n")
+        out.write(f"{2 * INDENT}[[ -f {envfile} ]] && . {envfile}\n")
         out.write(f"{2 * INDENT}set +o allexport\n")
         return out.getvalue()
 

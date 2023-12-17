@@ -15,7 +15,7 @@ usage() {
 case $cmd in
     test)
         set -o allexport
-        . .env
+        [[ -f .env ]] && . .env
         set +o allexport
         pytest "$@"
         ;;
