@@ -16,6 +16,7 @@ from . import filters
 if TYPE_CHECKING:
     from installer.scripts import ScriptSection
     from pdm.environments import BaseEnvironment
+    from pdm.installers.installers import LinkMethod
     from pdm.models.candidates import Candidate
 
     from .config import DockerizeSettings
@@ -66,12 +67,21 @@ class FilteringDestination(InstallDestination):
     def __init__(
         self,
         *args: Any,
-        symlink_to: str | None = None,
+        link_to: str | None = None,
+        link_method: LinkMethod | None = None,
+        link_individual: bool = False,
         include: list[str] | None = None,
         exclude: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(*args, symlink_to=symlink_to, **kwargs)
+        super().__init__(
+            *args,
+            link_to=link_to,
+            link_method=link_method,
+            link_individual=link_individual,
+            **kwargs,
+        )
+
         self.include = include or []
         self.exclude = exclude or []
 
