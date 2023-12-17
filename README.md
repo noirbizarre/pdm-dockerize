@@ -137,9 +137,25 @@ exclude = ["prefix-not-you", "prefix-you-neither"]
 
 ### Selecting binaries
 
-By default, the `dockerize` command will not copy any python executable.
+By default, the `dockerize` command will not copy any python executable provided by your dependencies.
 You can select binaries with the `include_bins` and `exclude_bins` properties of the `tool.pdm.dockerize` section.
 Syntax and behavior are exactly the exact sames than `include`/`exclude` for script selection.
+
+#### Include all python executables
+
+```toml
+[tool.pdm.dockerize]
+include_bins = "*"
+```
+
+#### Include some specific executables
+
+Most of the time, you will look like this
+
+```toml
+[tool.pdm.dockerize]
+include = ["uvicorn"]
+```
 
 ## Contributing
 
