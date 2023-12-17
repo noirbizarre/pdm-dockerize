@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 🚀 0.2.2 (2023-12-17)
+
+### 🐛 Bug fixes
+
+- **entrypoint**: failsafe `env_file` loading with an explicit warning if not loaded
+- **entrypoint**: do not fail if envfile is not present
+
+<!-- End of file -->
+
 ## 🚀 0.2.1 (2023-12-17)
 
 ### 🐛 Bug fixes
