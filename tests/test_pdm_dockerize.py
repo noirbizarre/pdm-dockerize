@@ -129,10 +129,7 @@ def test_binaries_filtering(project: Project, pdm: PDMCallable, case: BinFilterC
 
     bindir = project.root / "dist/docker/bin"
     if bindir.exists():
-        print(list(bindir.iterdir()))
-        bins = [
-            bin.name for bin in bindir.iterdir() if not bin.is_dir() and os.access(bin, os.X_OK)
-        ]
+        bins = [bin.name for bin in bindir.iterdir() if bin.is_file() and os.access(bin, os.X_OK)]
     else:
         bins = []
 

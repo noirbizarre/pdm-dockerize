@@ -27,6 +27,10 @@ CASES = {
     "call": {"test": {"call": "my.app:main"}},
     "call-with-arguments": {"test": {"call": "my.app:main('dev', key='value')"}},
     "composite": {"test": {"composite": ["first", "second"]}},
+    "composite-inline": {
+        "_helper": "should be inlined",
+        "command": {"composite": ["_helper something"]},
+    },
     "env": {"test": {"cmd": "pytest", "env": {"WHATEVER": "42", "OTHER": "value"}}},
     "shared-env": {
         "_": {"env": {"WHATEVER": "42", "OTHER": "value"}},
@@ -77,6 +81,16 @@ CASES = {
                 )
             ]
         },
+    },
+    "args-placeholder": {
+        "cmd": "cmd.before {args} cmd.after",
+        "shell": {"shell": "shell.before {args} shell.after"},
+        "composite": {"composite": ["cmd --something", "shell {args}"]},
+    },
+    "args-placeholder-with-defaults": {
+        "cmd": "cmd.before {args:default value} cmd.after",
+        "shell": {"shell": "shell.before {args:default value} shell.after"},
+        "composite": {"composite": ["cmd --something", "shell {args:default value}"]},
     },
 }
 

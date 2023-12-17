@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from pdm.cli.commands.run import TaskRunner, exec_opts
+from pdm.cli.commands.run import RE_ARGS_PLACEHOLDER, TaskRunner, exec_opts
 
 from . import filters
 
@@ -119,7 +119,7 @@ class ProjectEntrypoint:
         out.write(f"{2 * INDENT};;\n")
         return out.getvalue()
 
-    def script_for(self, task: Task, params: str = '"$@"') -> str:
+    def script_for(self, task: Task, params: str | None = None) -> str:
         """Render the script part for a single task"""
         out = io.StringIO()
         opts = exec_opts(self.runner.global_options, task.options)
@@ -133,7 +133,7 @@ class ProjectEntrypoint:
             out.write(self.source_env(override))
 
         if task.kind == "call":
-            out.write(self.call_script(task, params))
+            out.write(self.call_script(task))
         elif task.kind == "cmd":
             out.write(self.cmd_script(task, params))
         elif task.kind == "composite":
@@ -149,11 +149,19 @@ class ProjectEntrypoint:
         out.write(f"{2 * INDENT}set +o allexport\n")
         return out.getvalue()
 
-    def cmd_script(self, task: Task, params: str = '"$@"') -> str:
-        args = task.args if isinstance(task.args, list) else shlex.split(task.args)
-        return f"{2 * INDENT}{' '.join(args)} {params}\n"
+    def cmd_script(self, task: Task, params: str | None = None) -> str:
+        if isinstance(task.args, str):
+            script, interpolated = self.interpolate(task.args)
+            script = " ".join(shlex.split(script, posix=False))
+        else:
+            script, interpolated = self.interpolate(shlex.join(task.args))
+        if not (params or interpolated):
+            params = '"$@"'
+        if params:
+            script += f" {params}"
+        return f"{2 * INDENT}{script}\n"
 
-    def call_script(self, task: Task, params: str = '"$@"') -> str:
+    def call_script(self, task: Task) -> str:
         if not (m := RE_CALL.match(task.args)):
             raise ValueError("Unparsable call task {tasks.name}: {tasks.args}")
         pkg = m.group("pkg")
@@ -161,20 +169,44 @@ class ProjectEntrypoint:
         args = m.group("args") or ""
         return f'{2 * INDENT}python -c "from {pkg} import {fn}; {fn}({args})"\n'
 
-    def shell_script(self, task: Task, params: str = '"$@"') -> str:
+    def shell_script(self, task: Task, params: str | None = None) -> str:
         out = io.StringIO()
-        lines = task.args.splitlines()
+        args, interpolated = self.interpolate(task.args)
+        lines = args.splitlines()
         for idx, line in enumerate(lines, 1):
             out.write(f"{2 * INDENT}{line}")
             if idx == len(lines):
-                out.write(f" {params}")
+                if params:
+                    out.write(f" {params}")
+                if not interpolated:
+                    out.write(' "$@"')
             out.write("\n")
         return out.getvalue()
 
-    def composite_script(self, task: Task, params: str = '"$@"') -> str:
+    def composite_script(self, task: Task, params: str | None = None) -> str:
         out = io.StringIO()
-        for cmd in task.args:
-            args = shlex.split(cmd)
-            normalized = " ".join(args)
-            out.write(f"{2 * INDENT}{normalized} {params}\n")
+        cmds, interpolated = zip(*(self.interpolate(cmd) for cmd in task.args))
+        if not params and not any(interpolated):
+            params = '"$@"'
+        for cmd in cmds:
+            args = shlex.split(cmd, posix=False)
+            if inline := self.runner.get_task(args[0]):
+                args = args[1:]
+                script = " ".join(args)
+                if params:
+                    script += f" {params}"
+                out.write(self.script_for(inline, script))
+            else:
+                out.write(f"{2 * INDENT}{' '.join(args)} {params or ''}\n")
         return out.getvalue()
+
+    def interpolate(self, script: str) -> tuple[str, bool]:
+        """Interpolate the `{args:[defaults]} placeholder in a string"""
+
+        def replace(m: re.Match[str]) -> str:
+            if default := m.group("default"):
+                return f'"${{@:-{default}}}"'
+            return '"$@"'
+
+        interpolated, count = RE_ARGS_PLACEHOLDER.subn(replace, script)
+        return interpolated, count > 0
