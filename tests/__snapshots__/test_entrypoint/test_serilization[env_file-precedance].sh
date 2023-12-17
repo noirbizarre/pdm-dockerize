@@ -15,7 +15,7 @@ usage() {
 case $cmd in
     test)
         set -o allexport
-        [[ -f .env ]] && . .env || echo '.env is ignored as it does not exist.'
+        [ -f .env ] && . .env || echo '.env is ignored as it does not exist.'
         set +o allexport
         WHATEVER="42"
         pytest "$@"
