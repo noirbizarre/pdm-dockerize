@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 🚀 0.2.3 (2023-12-17)
+
+### 🐛 Bug fixes
+
+- **entrypoint**: ensure entrypoint stop on failures
+- **entrypoint**: use POSIX tests to check `env_file` presence
+
+<!-- End of file -->
+
 ## 🚀 0.2.2 (2023-12-17)
 
 ### 🐛 Bug fixes
