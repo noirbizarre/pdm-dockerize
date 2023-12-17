@@ -1,0 +1,4 @@
+rules:
+  MD024:
+    exclude:
+      - "CHANGELOG.md"

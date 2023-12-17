@@ -43,6 +43,10 @@ dockerize = "pdm_dockerize:plugin"
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
+[tool.pdm]
+plugins = [
+    "sync-pre-commit-lock",
+]
 
 [tool.pdm.version]
 source = "scm"
@@ -82,7 +86,7 @@ lint.cmd = "pre-commit run --all-files"
 
 format.help = "Format the code according to known rules"
 format.composite = [
-    "codespell --write-changes",
+    "codespell --write-changes --interactive 2",
     "ruff --fix-only --show-fixes src tests",
     "black src tests",
 ]
@@ -155,14 +159,11 @@ ignore_errors = true
 
 
 [tool.black]
-# Black adds 10% tolernace which makes it to 110
-# See:
-#  https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html#line-length
 line-length = 100
 
 
 [tool.ruff]
-line-length = 110
+line-length = 100
 respect-gitignore = true
 select = [
     # Pyflakes
@@ -193,4 +194,4 @@ exclude = [
 
 
 [tool.codespell]
-skip = '*.po,*.ts,./src/3rdParty,./reports'
+skip = '__snapshots__,./reports'

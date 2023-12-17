@@ -7,10 +7,11 @@ default_install_hook_types:
   - pre-commit
   - commit-msg
   - pre-push
+  - post-checkout
+  - post-merge
 
 default_stages:
-  - commit
-  - push
+  - pre-commit
 
 repos:
   - repo: meta
@@ -34,33 +35,34 @@ repos:
     rev: 2.11.1
     hooks:
       - id: pdm-lock-check
+      - id: pdm-sync
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.10.0
+    rev: v3.13.0
     hooks:
       - id: commitizen
         additional_dependencies:
           - emotional
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.27.0
+    rev: 0.27.3
     hooks:
       - id: check-github-workflows
       - id: check-dependabot
 
   - repo: https://github.com/psf/black
-    rev: 23.9.1
+    rev: 23.12.0
     hooks:
       - id: black
 
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.292
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.8
     hooks:
       - id: ruff
         args: [--fix]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.6.0
+    rev: v1.7.1
     hooks:
       - id: mypy
         exclude: docs/.*\.pyi?$
