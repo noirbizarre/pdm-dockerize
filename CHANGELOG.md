@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 🚀 0.2.4 (2023-12-17)
+
+### 🐛 Bug fixes
+
+- **entrypoint**: remove the `-o pipefail` option which is not cross-platform
+
+<!-- End of file -->
+
 ## 🚀 0.2.3 (2023-12-17)
 
 ### 🐛 Bug fixes
