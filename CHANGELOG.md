@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 🚀 0.2.1 (2023-12-17)
+
+### 🐛 Bug fixes
+
+- **entrypoint**: use a `sh`-supported source syntax (eg. '.')
+
+<!-- End of file -->
+
 ## 🚀 0.2.0 (2023-12-17)
 
 ### 💫 New features
