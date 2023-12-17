@@ -5,7 +5,7 @@
 groups = ["default", "lint", "release", "test", "tox"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:538bbbc7188a2fc33fa5c432ee0aa0588a3a2110ed500db57038a4ddc3d0420e"
+content_hash = "sha256:e363476bf283e4ad095e16add96b64d6cde891fe783655ae7f3acf4d2d2825cd"
 
 [[package]]
 name = "aiohttp"
@@ -148,7 +148,7 @@ version = "23.12.0"
 requires_python = ">=3.8"
 summary = "The uncompromising code formatter."
 dependencies = [
-    "aiohttp>=3.7.4; sys_platform != \"win32\" or implementation_name != \"pypy\" and extra == \"d\"",
+    "aiohttp>=3.7.4; sys_platform != \"win32\" or implementation_name != \"pypy\"",
     "click>=8.0.0",
     "mypy-extensions>=0.4.3",
     "packaging>=22.0",
@@ -367,14 +367,6 @@ summary = "Cross-platform colored terminal text."
 files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
-]
-
-[[package]]
-name = "colored"
-version = "1.4.4"
-summary = "Simple library for color and formatting to terminal"
-files = [
-    {file = "colored-1.4.4.tar.gz", hash = "sha256:04ff4d4dd514274fe3b99a21bb52fb96f2688c01e93fba7bef37221e7cb56ce0"},
 ]
 
 [[package]]
@@ -1380,16 +1372,15 @@ files = [
 
 [[package]]
 name = "syrupy"
-version = "3.0.6"
-requires_python = ">=3.7,<4"
+version = "4.6.0"
+requires_python = ">=3.8.1,<4"
 summary = "Pytest Snapshot Test Utility"
 dependencies = [
-    "colored<2.0.0,>=1.3.92",
-    "pytest<8.0.0,>=5.1.0",
+    "pytest<8.0.0,>=7.0.0",
 ]
 files = [
-    {file = "syrupy-3.0.6-py3-none-any.whl", hash = "sha256:9c18e22264026b34239bcc87ab7cc8d893eb17236ea7dae634217ea4f22a848d"},
-    {file = "syrupy-3.0.6.tar.gz", hash = "sha256:583aa5ca691305c27902c3e29a1ce9da50ff9ab5f184c54b1dc124a16e4a6cf4"},
+    {file = "syrupy-4.6.0-py3-none-any.whl", hash = "sha256:747aae1bcf3cb3249e33b1e6d81097874d23615982d5686ebe637875b0775a1b"},
+    {file = "syrupy-4.6.0.tar.gz", hash = "sha256:231b1f5d00f1f85048ba81676c79448076189c4aef4d33f21ae32f3b4c565a54"},
 ]
 
 [[package]]
