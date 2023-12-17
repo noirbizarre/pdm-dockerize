@@ -55,7 +55,7 @@ class ProjectEntrypoint:
         out = io.StringIO()
 
         out.write("#!/usr/bin/env sh\n\n")
-        out.write("set -euo pipefail\n\n")
+        out.write("set -eu\n\n")
         out.write(self.python_env())
         out.write("\n")
         out.write("cmd=$1\n")

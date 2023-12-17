@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-set -euo pipefail
+set -eu
 
 export PYTHONPATH=./lib
 export PATH=./bin:$PATH
