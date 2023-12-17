@@ -16,7 +16,7 @@ case $cmd in
     test)
         WHATEVER="42"
         set -o allexport
-        source .env
+        . .env
         set +o allexport
         pytest "$@"
         ;;

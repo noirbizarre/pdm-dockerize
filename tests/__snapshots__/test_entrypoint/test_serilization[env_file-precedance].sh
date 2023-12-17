@@ -15,7 +15,7 @@ usage() {
 case $cmd in
     test)
         set -o allexport
-        source .env
+        . .env
         set +o allexport
         WHATEVER="42"
         pytest "$@"
