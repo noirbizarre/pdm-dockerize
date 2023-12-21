@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 🚀 0.3.0 (2023-12-21)
+
+### 💫 New features
+
+- **PYTHONPATH**: support src-layout and non-root packages for `pdm.backend`-based projects
+
+### 📖 Documentation
+
+- **README**: add some details
+
+### 📦 Build
+
+- update some tooling
+
+<!-- End of file -->
+
 ## 🚀 0.2.4 (2023-12-17)
 
 ### 🐛 Bug fixes
