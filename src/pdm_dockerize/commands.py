@@ -38,7 +38,7 @@ class DockerizeCommand(BaseCommand):
         Option(
             "target",
             nargs="?",
-            help="The target into which the docker assets will be generated (default to dist/docker)",
+            help="The target into which the docker assets will be generated (default: dist/docker)",
         ),
         *BaseCommand.arguments,
         groups_group,

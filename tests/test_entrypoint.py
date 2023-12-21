@@ -136,3 +136,24 @@ def test_filtering(project: Project, snapshot: SnapshotAssertion, case: FilterCa
         dockerize["exclude"] = case.exclude
     project.pyproject.settings["dockerize"] = dockerize
     assert entrypoint_for(project) == snapshot
+
+
+def test_pythonpath_explicit_src_layout(project: Project, snapshot: SnapshotAssertion):
+    project.pyproject._data["build-system"] = {
+        "requires": ["pdm-backend"],
+        "build-backend": "pdm.backend",
+    }
+    project.pyproject.settings["build"] = {"package-dir": "src"}
+    assert entrypoint_for(project) == snapshot
+
+
+def test_pythonpath_implicit_src_layout(project: Project, snapshot: SnapshotAssertion):
+    project.pyproject._data["build-system"] = {
+        "requires": ["pdm-backend"],
+        "build-backend": "pdm.backend",
+    }
+    pkg_dir = project.root / "src/pkg"
+    pkg_dir.mkdir(parents=True, exist_ok=True)
+    pkg_init = pkg_dir / "__init__.py"
+    pkg_init.write_text("")
+    assert entrypoint_for(project) == snapshot

@@ -2,8 +2,8 @@
 
 set -eu
 
-export PYTHONPATH=./lib
-export PATH=./bin:$PATH
+export PYTHONPATH=lib
+export PATH=bin:$PATH
 
 cmd=$1
 shift

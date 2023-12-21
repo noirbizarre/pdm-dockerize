@@ -78,9 +78,21 @@ class ProjectEntrypoint:
     def python_env(self) -> str:
         """Generate the environment variables statements"""
         out = io.StringIO()
-        out.write("export PYTHONPATH=./lib\n")
-        out.write("export PATH=./bin:$PATH\n")
+        pythonpath = ["lib"]
+        if package_dir := self.get_package_dir():
+            pythonpath.insert(0, package_dir)
+        out.write(f"export PYTHONPATH={':'.join(pythonpath)}\n")
+        out.write("export PATH=bin:$PATH\n")
         return out.getvalue()
+
+    def get_package_dir(self) -> str | None:
+        """An optional directory containing the project sources"""
+        # TODO: find a better way to identify package-dir
+        build_system = self.project.backend.build_system()
+        if not build_system.get("build-backend") == "pdm.backend":
+            return None
+        default = "src" if self.project.root.joinpath("src").exists() else None
+        return self.project.pyproject.settings.get("build", {}).get("package-dir", default)
 
     def usage(self) -> str:
         """Render the entrypoint usage/help"""
