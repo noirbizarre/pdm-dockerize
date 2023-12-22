@@ -2,11 +2,13 @@
 
 set -eu
 
-export PYTHONPATH=lib
-export PATH=bin:$PATH
+dirname=$(dirname $0)
+cmd=${1:-""}
+[ $cmd ] && shift
+cd $dirname > /dev/null
 
-cmd=$1
-shift
+export PYTHONPATH=$(pwd)/lib
+export PATH=$(pwd)/bin:$PATH
 
 usage() {
     echo "Available commands"

@@ -56,10 +56,12 @@ class ProjectEntrypoint:
 
         out.write("#!/usr/bin/env sh\n\n")
         out.write("set -eu\n\n")
-        out.write(self.python_env())
+        out.write("dirname=$(dirname $0)\n")
+        out.write('cmd=${1:-""}\n')
+        out.write("[ $cmd ] && shift\n")
+        out.write("cd $dirname > /dev/null\n")
         out.write("\n")
-        out.write("cmd=$1\n")
-        out.write("shift\n")
+        out.write(self.export_env())
         out.write("\n")
         out.write(self.usage())
         out.write("\n")
@@ -75,14 +77,15 @@ class ProjectEntrypoint:
 
         return out.getvalue()
 
-    def python_env(self) -> str:
-        """Generate the environment variables statements"""
+    def export_env(self) -> str:
+        """Export the environment variables"""
         out = io.StringIO()
-        pythonpath = ["lib"]
+        path = ["$(pwd)/bin", "$PATH"]
+        pythonpath = ["$(pwd)/lib"]
         if package_dir := self.get_package_dir():
             pythonpath.insert(0, package_dir)
         out.write(f"export PYTHONPATH={':'.join(pythonpath)}\n")
-        out.write("export PATH=bin:$PATH\n")
+        out.write(f"export PATH={':'.join(path)}\n")
         return out.getvalue()
 
     def get_package_dir(self) -> str | None:
@@ -92,7 +95,8 @@ class ProjectEntrypoint:
         if not build_system.get("build-backend") == "pdm.backend":
             return None
         default = "src" if self.project.root.joinpath("src").exists() else None
-        return self.project.pyproject.settings.get("build", {}).get("package-dir", default)
+        pkgdir = self.project.pyproject.settings.get("build", {}).get("package-dir", default)
+        return f"$(pwd)/{pkgdir}" if pkgdir else None
 
     def usage(self) -> str:
         """Render the entrypoint usage/help"""
