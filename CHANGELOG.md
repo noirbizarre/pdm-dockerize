@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 🚀 0.3.1 (2023-12-22)
+
+### 🐛 Bug fixes
+
+- **entrypoint**: run from the app dir and use absolute `$PATH` and `$PYTHONPATH`
+
+<!-- End of file -->
+
 ## 🚀 0.3.0 (2023-12-21)
 
 ### 💫 New features
