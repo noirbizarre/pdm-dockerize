@@ -2,13 +2,15 @@
 
 set -eu
 
-dirname=$(dirname $0)
+dirname=$(dirname "$0")
 cmd=${1:-""}
-[ $cmd ] && shift
-cd $dirname > /dev/null
+[ "$cmd" ] && shift
+cd "$dirname" > /dev/null
 
-export PYTHONPATH=$(pwd)/src:$(pwd)/lib
-export PATH=$(pwd)/bin:$PATH
+PYTHONPATH="$(pwd)/src":"$(pwd)/lib"
+export PYTHONPATH
+PATH="$(pwd)/bin":"$PATH"
+export PATH
 
 usage() {
     echo "Available commands"

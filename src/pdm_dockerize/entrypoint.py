@@ -56,10 +56,10 @@ class ProjectEntrypoint:
 
         out.write("#!/usr/bin/env sh\n\n")
         out.write("set -eu\n\n")
-        out.write("dirname=$(dirname $0)\n")
+        out.write('dirname=$(dirname "$0")\n')
         out.write('cmd=${1:-""}\n')
-        out.write("[ $cmd ] && shift\n")
-        out.write("cd $dirname > /dev/null\n")
+        out.write('[ "$cmd" ] && shift\n')
+        out.write('cd "$dirname" > /dev/null\n')
         out.write("\n")
         out.write(self.export_env())
         out.write("\n")
@@ -84,8 +84,17 @@ class ProjectEntrypoint:
         pythonpath = ["$(pwd)/lib"]
         if package_dir := self.get_package_dir():
             pythonpath.insert(0, package_dir)
-        out.write(f"export PYTHONPATH={':'.join(pythonpath)}\n")
-        out.write(f"export PATH={':'.join(path)}\n")
+        out.write(self.export_var("PYTHONPATH", ":".join(f'"{p}"' for p in pythonpath)))
+        out.write(self.export_var("PATH", ":".join(f'"{p}"' for p in path)))
+        return out.getvalue()
+
+    def export_var(self, name: str, value: str, indent: int = 0) -> str:
+        prefix = INDENT * indent
+        out = io.StringIO()
+        if not value.startswith('"') or not value.endswith('"'):
+            value = f'"{value}"'
+        out.write(f"{prefix}{name}={value}\n")
+        out.write(f"{prefix}export {name}\n")
         return out.getvalue()
 
     def get_package_dir(self) -> str | None:
@@ -144,7 +153,7 @@ class ProjectEntrypoint:
             out.write(self.source_env(envfile))
 
         for var, value in opts.get("env", {}).items():
-            out.write(f'{2 * INDENT}{var}="{value}"\n')
+            out.write(self.export_var(var, value, indent=2))
 
         if isinstance(envfile, dict) and (override := envfile.get("override")):
             out.write(self.source_env(override))
@@ -162,6 +171,7 @@ class ProjectEntrypoint:
     def source_env(self, envfile: str) -> str:
         out = io.StringIO()
         out.write(f"{2 * INDENT}set -o allexport\n")
+        out.write(f"{2 * INDENT}# shellcheck source=/dev/null\n")
         out.write(f"{2 * INDENT}[ -f {envfile} ] && . {envfile} ")
         out.write(f"|| echo '{envfile} is ignored as it does not exist.'\n")
         out.write(f"{2 * INDENT}set +o allexport\n")

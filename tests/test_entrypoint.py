@@ -12,6 +12,7 @@ from pdm_dockerize.entrypoint import ProjectEntrypoint
 if TYPE_CHECKING:
     from pdm.project import Project
     from syrupy import SnapshotAssertion
+    from tests.conftest import ShellcheckFixture
 
 
 def entrypoint_for(project: Project, hooks: HookManager | None = None) -> str:
@@ -96,10 +97,17 @@ CASES = {
 
 
 @pytest.mark.parametrize("scripts", [pytest.param(scripts, id=id) for id, scripts in CASES.items()])
-def test_serilization(project: Project, snapshot: SnapshotAssertion, scripts: dict[str, Any]):
+def test_serilization(
+    project: Project,
+    snapshot: SnapshotAssertion,
+    scripts: dict[str, Any],
+    shellcheck: ShellcheckFixture,
+):
     project.pyproject.settings["dockerize"] = {"include": "*"}
     project.pyproject.settings["scripts"] = scripts
-    assert entrypoint_for(project) == snapshot
+    entrypoint = entrypoint_for(project)
+    assert entrypoint == snapshot
+    shellcheck(entrypoint)
 
 
 @dataclass

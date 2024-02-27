@@ -5,7 +5,7 @@
 groups = ["default", "lint", "release", "test", "tox"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:e363476bf283e4ad095e16add96b64d6cde891fe783655ae7f3acf4d2d2825cd"
+content_hash = "sha256:77f44cc426b78d298d71e77d3bbdaad4884fd15622ae4b56b1c0ed4a430a8311"
 
 [[package]]
 name = "argcomplete"
@@ -1078,6 +1078,18 @@ files = [
     {file = "ruff-0.2.2-py3-none-win_amd64.whl", hash = "sha256:cc9a91ae137d687f43a44c900e5d95e9617cb37d4c989e462980ba27039d239d"},
     {file = "ruff-0.2.2-py3-none-win_arm64.whl", hash = "sha256:c9d15fc41e6054bfc7200478720570078f0b41c9ae4f010bcc16bd6f4d1aacdd"},
     {file = "ruff-0.2.2.tar.gz", hash = "sha256:e62ed7f36b3068a30ba39193a14274cd706bc486fad521276458022f7bccb31d"},
+]
+
+[[package]]
+name = "shellcheck-py"
+version = "0.9.0.6"
+requires_python = ">=3.8"
+summary = "Python wrapper around invoking shellcheck (https://www.shellcheck.net/)"
+files = [
+    {file = "shellcheck_py-0.9.0.6-py2.py3-none-macosx_11_0_x86_64.whl", hash = "sha256:38d48a4e2279f5deac374574e7625cd53b7f615301f36b1b1fffd22105dc066d"},
+    {file = "shellcheck_py-0.9.0.6-py2.py3-none-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:730235c4f92657884f8b343d5426e4dc28e9a6ba9ad54d469cd038e340ea5be0"},
+    {file = "shellcheck_py-0.9.0.6-py2.py3-none-win_amd64.whl", hash = "sha256:d1d0c285e2c094813659e0920559a2892da598c1176da59cb4eb9e2f505e5ee8"},
+    {file = "shellcheck_py-0.9.0.6.tar.gz", hash = "sha256:f83a0ee1e9762f787ab52e8a906e553b9583586c44e3f9730b6e635f296a69e8"},
 ]
 
 [[package]]

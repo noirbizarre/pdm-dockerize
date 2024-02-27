@@ -60,6 +60,7 @@ test = [
     "pytest-sugar>=0.9.5",
     "pytest-cov>=3.0.0",
     "syrupy>=3.0.6",
+    "shellcheck-py>=0.9.0.6",
 ]
 lint = [
     "black>=23.7.0",

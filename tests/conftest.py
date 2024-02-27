@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 import pytest
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
@@ -37,3 +38,24 @@ class ScriptExtension(SingleFileSnapshotExtension):
 @pytest.fixture
 def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
     return snapshot.use_extension(ScriptExtension)
+
+
+class ShellcheckFixture(Protocol):
+    def __call__(self, script: str): ...
+
+
+class ShellcheckError(AssertionError):
+    pass
+
+
+@pytest.fixture
+def shellcheck(tmp_path_factory: pytest.TempPathFactory) -> ShellcheckFixture:
+    def fixture(script: str):
+        file = tmp_path_factory.mktemp("shellcheck", True) / "script.sh"
+        file.write_text(script)
+        result = subprocess.run(["shellcheck", str(file)], capture_output=True)
+        file.unlink()
+        if result.returncode != 0:
+            raise ShellcheckError(result.stdout.decode())
+
+    return fixture
