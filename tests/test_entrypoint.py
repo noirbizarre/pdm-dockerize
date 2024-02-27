@@ -12,6 +12,7 @@ from pdm_dockerize.entrypoint import ProjectEntrypoint
 if TYPE_CHECKING:
     from pdm.project import Project
     from syrupy import SnapshotAssertion
+
     from tests.conftest import ShellcheckFixture
 
 
@@ -97,7 +98,7 @@ CASES = {
 
 
 @pytest.mark.parametrize("scripts", [pytest.param(scripts, id=id) for id, scripts in CASES.items()])
-def test_serilization(
+def test_serialization(
     project: Project,
     snapshot: SnapshotAssertion,
     scripts: dict[str, Any],
