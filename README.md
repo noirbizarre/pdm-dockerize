@@ -5,7 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/v/pdm-dockerize)](https://pypi.org/project/pdm-dockerize/)
 [![PyPI - License](https://img.shields.io/pypi/l/pdm-dockerize)](https://pypi.org/project/pdm-dockerize/)
 
-Help generating docker image from PDM projects
+Help generating docker image from PDM projects.
 
 ## Installation
 
@@ -185,6 +185,15 @@ This file will only be loaded in the docker entrypoint.
 [tool.pdm.dockerize]
 env_file = "docker.env"
 ```
+
+## Internals
+
+This plugin works by providing by subclassing some `pdm.installers` classes to reuse the installation process:
+- `DockerizeInstallManager`, a `pdm` `InstallManager` filtering binaries
+- `DockerizeSynchronizer`, a `pdm` `Synchronizer` using a `DockerizeInstallManager` as `InstallManager`
+- `FilteringDestination`, a `pdm` `InstallDestination` filtering binaries
+
+This way, the dockerization is using the same installation process just tuned for docker and augmented with `pdm-dockerize` specifics.
 
 ## Contributing
 
