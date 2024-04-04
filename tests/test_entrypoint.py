@@ -166,3 +166,27 @@ def test_pythonpath_implicit_src_layout(project: Project, snapshot: SnapshotAsse
     pkg_init = pkg_dir / "__init__.py"
     pkg_init.write_text("")
     assert entrypoint_for(project) == snapshot
+
+
+def test_global_env(
+    project: Project,
+    snapshot: SnapshotAssertion,
+    shellcheck: ShellcheckFixture,
+):
+    project.pyproject.settings["dockerize"] = {"include": "*", "env": {"VAR": 42, "LAST": "value"}}
+    project.pyproject.settings["scripts"] = {"hello": "echo 'Hello'"}
+    entrypoint = entrypoint_for(project)
+    assert entrypoint == snapshot
+    shellcheck(entrypoint)
+
+
+def test_global_env_file(
+    project: Project,
+    snapshot: SnapshotAssertion,
+    shellcheck: ShellcheckFixture,
+):
+    project.pyproject.settings["dockerize"] = {"include": "*", "env_file": "docker.env"}
+    project.pyproject.settings["scripts"] = {"hello": "echo 'Hello'"}
+    entrypoint = entrypoint_for(project)
+    assert entrypoint == snapshot
+    shellcheck(entrypoint)

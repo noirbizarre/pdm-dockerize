@@ -86,6 +86,11 @@ class ProjectEntrypoint:
             pythonpath.insert(0, package_dir)
         out.write(self.export_var("PYTHONPATH", ":".join(f'"{p}"' for p in pythonpath)))
         out.write(self.export_var("PATH", ":".join(f'"{p}"' for p in path)))
+        if env := self.settings.get("env"):
+            for name, value in env.items():
+                out.write(self.export_var(name, str(value)))
+        if env_file := self.settings.get("env_file"):
+            out.write(self.source_env(env_file))
         return out.getvalue()
 
     def export_var(self, name: str, value: str, indent: int = 0) -> str:
@@ -150,13 +155,13 @@ class ProjectEntrypoint:
         out = io.StringIO()
         opts = exec_opts(self.runner.global_options, task.options)
         if (envfile := opts.get("env_file")) and isinstance(envfile, str):
-            out.write(self.source_env(envfile))
+            out.write(self.source_env(envfile, indent=2))
 
         for var, value in (opts.get("env") or {}).items():
             out.write(self.export_var(var, value, indent=2))
 
         if isinstance(envfile, dict) and (override := envfile.get("override")):
-            out.write(self.source_env(override))
+            out.write(self.source_env(override, indent=2))
 
         if task.kind == "call":
             out.write(self.call_script(task))
@@ -168,13 +173,14 @@ class ProjectEntrypoint:
             out.write(self.shell_script(task, params))
         return out.getvalue()
 
-    def source_env(self, envfile: str) -> str:
+    def source_env(self, envfile: str, indent: int = 0) -> str:
         out = io.StringIO()
-        out.write(f"{2 * INDENT}set -o allexport\n")
-        out.write(f"{2 * INDENT}# shellcheck source=/dev/null\n")
-        out.write(f"{2 * INDENT}[ -f {envfile} ] && . {envfile} ")
+        prefix = indent * INDENT
+        out.write(f"{prefix}set -o allexport\n")
+        out.write(f"{prefix}# shellcheck source=/dev/null\n")
+        out.write(f"{prefix}[ -f {envfile} ] && . {envfile} ")
         out.write(f"|| echo '{envfile} is ignored as it does not exist.'\n")
-        out.write(f"{2 * INDENT}set +o allexport\n")
+        out.write(f"{prefix}set +o allexport\n")
         return out.getvalue()
 
     def cmd_script(self, task: Task, params: str | None = None) -> str:

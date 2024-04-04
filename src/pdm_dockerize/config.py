@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class DockerizeSettings(TypedDict):
@@ -15,3 +15,9 @@ class DockerizeSettings(TypedDict):
 
     exclude_bins: str | list[str] | None
     """List of binanries patterns to exclude"""
+
+    env: dict[str, Any] | None
+    """Global environment variables to export in docker only"""
+
+    env_file: str | None
+    """Global dotenv file to source to source in docker only"""

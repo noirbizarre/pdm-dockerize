@@ -157,6 +157,35 @@ Most of the time, you will look like this
 include = ["uvicorn"]
 ```
 
+### Controlling environment
+
+`pdm-dockerize` respects defined environment variables:
+- scripts `env` variables are properly set
+- shared `_.env` variables are properly set
+- scripts `env_file` are properly loaded
+- shared `_.env_file` are properly loaded
+
+In addition, you can define some docker-only environment variables using the `tool.pdm.dockerize.env` table
+or some docker-only `.env` files using `tool.pdm.dockerize.env_file`
+
+#### Defining docker-only environment variables
+
+Those environment variables will only be effective in the docker entrypoint.
+
+```toml
+[tool.pdm.dockerize.env]
+VAR = "value"
+```
+
+#### Loading docker-only environment files
+
+This file will only be loaded in the docker entrypoint.
+
+```toml
+[tool.pdm.dockerize]
+env_file = "docker.env"
+```
+
 ## Contributing
 
 Read the [dedicated contributing guidelines](./CONTRIBUTING.md).
