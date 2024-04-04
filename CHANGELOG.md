@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 🚀 0.4.0 (2024-04-04)
+
+### 🚨 Breaking changes
+
+- **pdm**: now depends on `pdm>=2.13`
+
+### 💫 New features
+
+- **env**: allow to source/export some docker-only environement variables or dotenv files
+- **shellcheck**: all generated scripts are passing `shellcheck` validation
+
+### 📦 Build
+
+- **deps**: update dev dependencies
+
+
 ## 🚀 0.3.1 (2023-12-22)
 
 ### 🐛 Bug fixes
