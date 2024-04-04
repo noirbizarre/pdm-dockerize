@@ -8,7 +8,7 @@ from installer.destinations import Scheme
 from installer.records import RecordEntry
 from pdm.compat import Distribution
 from pdm.installers import Synchronizer
-from pdm.installers.installers import InstallDestination, _get_kind, _install_wheel
+from pdm.installers.installers import InstallDestination, PackageWheelSource, install
 from pdm.installers.manager import InstallManager
 
 from . import filters
@@ -42,15 +42,13 @@ class DockerizeInstallManager(InstallManager):
         destination = FilteringDestination(
             scheme_dict=self.environment.get_paths(),
             interpreter=str(self.environment.interpreter.executable),
-            script_kind=_get_kind(self.environment),
+            script_kind=self.environment.script_kind,
             include=self.include,
             exclude=self.exclude,
         )
-        dist_info = _install_wheel(
-            wheel=str(prepared.build()),
-            destination=destination,
-            additional_metadata=additional_metadata,
-        )
+
+        source = PackageWheelSource(prepared.get_cached_package())
+        dist_info = install(source, destination, additional_metadata)
         return Distribution.at(dist_info)
 
 
@@ -67,18 +65,14 @@ class FilteringDestination(InstallDestination):
     def __init__(
         self,
         *args: Any,
-        link_to: str | None = None,
-        link_method: LinkMethod | None = None,
-        link_individual: bool = False,
+        link_method: LinkMethod = "copy",
         include: list[str] | None = None,
         exclude: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
             *args,
-            link_to=link_to,
             link_method=link_method,
-            link_individual=link_individual,
             **kwargs,
         )
 

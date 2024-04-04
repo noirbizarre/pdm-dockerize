@@ -28,7 +28,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "pdm>=2.11",
+    "pdm>=2.13",
 ]
 [project.urls]
 Homepage = "https://github.com/noirbizarre/pdm-dockerize"

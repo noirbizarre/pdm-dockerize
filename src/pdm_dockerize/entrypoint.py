@@ -152,7 +152,7 @@ class ProjectEntrypoint:
         if (envfile := opts.get("env_file")) and isinstance(envfile, str):
             out.write(self.source_env(envfile))
 
-        for var, value in opts.get("env", {}).items():
+        for var, value in (opts.get("env") or {}).items():
             out.write(self.export_var(var, value, indent=2))
 
         if isinstance(envfile, dict) and (override := envfile.get("override")):
