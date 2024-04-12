@@ -24,6 +24,12 @@ jobs:
       id-token: write
 
     steps:
+      - name: Ensures ref to release pass CI
+        uses: noirbizarre/need-checks@0.1
+        with:
+          workflow: ci.yml
+          token: ${{ secrets.PAT }}
+
       - name: Clone
         uses: actions/checkout@v4
         with:
