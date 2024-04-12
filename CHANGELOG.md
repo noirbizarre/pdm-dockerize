@@ -8,7 +8,7 @@
 
 ### 💫 New features
 
-- **env**: allow to source/export some docker-only environement variables or dotenv files
+- **env**: allow to source/export some docker-only environment variables or dotenv files
 - **shellcheck**: all generated scripts are passing `shellcheck` validation
 
 ### 📦 Build

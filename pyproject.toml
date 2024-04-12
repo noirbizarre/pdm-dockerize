@@ -63,10 +63,9 @@ test = [
     "shellcheck-py>=0.9.0.6",
 ]
 lint = [
-    "black>=23.7.0",
     "codespell>=2.2.6",
     "mypy>=1.5.1",
-    "ruff>=0.1.7",
+    "ruff>=0.3.0",
     "tomli; python_version<'3.11'",
 ]
 tox = [
@@ -88,8 +87,9 @@ lint.cmd = "pre-commit run --all-files"
 format.help = "Format the code according to known rules"
 format.composite = [
     "codespell --write-changes --interactive 2",
-    "ruff --fix-only --show-fixes src tests",
-    "black src tests",
+    # See: https://docs.astral.sh/ruff/formatter/#sorting-imports
+    "ruff check --select I --fix-only --show-fixes src tests",
+    "ruff format src tests"
 ]
 
 typing.help = "Full typing linting (includes imported packages and uncommmited files)"
@@ -136,7 +136,7 @@ include = "*"
 
 
 [tool.pytest.ini_options]
-addopts = "-ra"
+addopts = "-rfEX"
 norecursedirs = ".git build dist"
 testpaths = [
   "src/",
@@ -159,13 +159,12 @@ exclude_also = [
 ignore_errors = true
 
 
-[tool.black]
-line-length = 100
-
-
 [tool.ruff]
 line-length = 100
 respect-gitignore = true
+src = ["src", "tests"]
+
+[tool.ruff.lint]
 select = [
     # Pyflakes
     "F",
@@ -179,9 +178,8 @@ select = [
     # isort
     "I001"
 ]
-src = ["src", "tests"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["pdm_dockerize"]
 known-third-party = ["pytest", "syrupy"]
 
