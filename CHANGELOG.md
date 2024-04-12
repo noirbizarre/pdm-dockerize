@@ -15,14 +15,11 @@
 
 - **deps**: update dev dependencies
 
-
 ## 🚀 0.3.1 (2023-12-22)
 
 ### 🐛 Bug fixes
 
 - **entrypoint**: run from the app dir and use absolute `$PATH` and `$PYTHONPATH`
-
-<!-- End of file -->
 
 ## 🚀 0.3.0 (2023-12-21)
 
@@ -38,15 +35,11 @@
 
 - update some tooling
 
-<!-- End of file -->
-
 ## 🚀 0.2.4 (2023-12-17)
 
 ### 🐛 Bug fixes
 
 - **entrypoint**: remove the `-o pipefail` option which is not cross-platform
-
-<!-- End of file -->
 
 ## 🚀 0.2.3 (2023-12-17)
 
@@ -55,8 +48,6 @@
 - **entrypoint**: ensure entrypoint stop on failures
 - **entrypoint**: use POSIX tests to check `env_file` presence
 
-<!-- End of file -->
-
 ## 🚀 0.2.2 (2023-12-17)
 
 ### 🐛 Bug fixes
@@ -64,15 +55,11 @@
 - **entrypoint**: failsafe `env_file` loading with an explicit warning if not loaded
 - **entrypoint**: do not fail if envfile is not present
 
-<!-- End of file -->
-
 ## 🚀 0.2.1 (2023-12-17)
 
 ### 🐛 Bug fixes
 
 - **entrypoint**: use a `sh`-supported source syntax (eg. '.')
-
-<!-- End of file -->
 
 ## 🚀 0.2.0 (2023-12-17)
 
@@ -98,8 +85,6 @@
 
 - **README**: Fix the `Dockerfile` snippet
 
-<!-- End of file -->
-
 ## 🚀 0.1.0 (2023-12-14)
 
 ### 💫 New features
@@ -110,5 +95,3 @@
 
 - **changelog**: prepare for first release
 - **README**: small post-import fixes
-
-<!-- End of file -->
