@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 🚀 0.5.0 (2024-04-12)
+
+### 🚨 Breaking changes
+
+- **pdm**: support and requires `pdm>=2.14`
+
+### 📖 Documentation
+
+- **CHANGELOG**: fix bad CHANGELOG formatting
+- **README**: document the base principle in README
+
+### 📦 Build
+
+- update the build dependencies, update to ruff 0.3+ and lock
+
+
 ## 🚀 0.4.0 (2024-04-04)
 
 ### 🚨 Breaking changes
