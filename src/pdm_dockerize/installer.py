@@ -8,7 +8,7 @@ from installer.destinations import Scheme
 from installer.records import RecordEntry
 from pdm.compat import Distribution
 from pdm.installers import Synchronizer
-from pdm.installers.installers import InstallDestination, PackageWheelSource, install
+from pdm.installers.installers import InstallDestination, WheelFile, install
 from pdm.installers.manager import InstallManager
 
 from . import filters
@@ -47,8 +47,8 @@ class DockerizeInstallManager(InstallManager):
             exclude=self.exclude,
         )
 
-        source = PackageWheelSource(prepared.get_cached_package())
-        dist_info = install(source, destination, additional_metadata)
+        with WheelFile.open(prepared.build()) as source:
+            dist_info = install(source, destination, additional_metadata)
         return Distribution.at(dist_info)
 
 
