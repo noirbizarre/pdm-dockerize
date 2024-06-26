@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 🚀 0.5.1 (2024-06-26)
+
+### 🐛 Bug fixes
+
+- **pdm**: `pdm>=2.15` changed `InstallManager` and `Synchronizer` signatures
+
+### 📖 Documentation
+
+- **README**: update plugin install instructions (fix [#8](https://github.com/noirbizarre/pdm-dockerize/issues/8))
+
+
 ## 🚀 0.5.0 (2024-04-12)
 
 ### 🚨 Breaking changes
