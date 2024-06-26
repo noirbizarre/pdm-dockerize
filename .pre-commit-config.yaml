@@ -27,7 +27,7 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.14.0
+    rev: 2.15.4
     hooks:
       - id: pdm-lock-check
       - id: pdm-sync
@@ -40,7 +40,7 @@ repos:
           - emotional
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.28.2
+    rev: 0.28.6
     hooks:
       - id: check-github-workflows
       - id: check-dependabot
