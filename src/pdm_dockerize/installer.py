@@ -25,8 +25,14 @@ if TYPE_CHECKING:
 class DockerizeInstallManager(InstallManager):
     """An `InstallManager` filtering installed binaries"""
 
-    def __init__(self, environment: BaseEnvironment, *, use_install_cache: bool = False) -> None:
-        super().__init__(environment, use_install_cache=use_install_cache)
+    def __init__(
+        self,
+        environment: BaseEnvironment,
+        *,
+        use_install_cache: bool = False,
+        rename_pth: bool = False,
+    ) -> None:
+        super().__init__(environment, use_install_cache=use_install_cache, rename_pth=rename_pth)
         settings: DockerizeSettings = self.environment.project.pyproject.settings.get(
             "dockerize", {}
         )
@@ -55,8 +61,12 @@ class DockerizeInstallManager(InstallManager):
 class DockerizeSynchronizer(Synchronizer):
     """A `Synchronizer` using the `DockerizeInstallManager`"""
 
-    def get_manager(self) -> InstallManager:
-        return DockerizeInstallManager(self.environment, use_install_cache=self.use_install_cache)
+    def get_manager(self, rename_pth: bool = False) -> InstallManager:
+        return DockerizeInstallManager(
+            self.environment,
+            use_install_cache=self.use_install_cache,
+            rename_pth=rename_pth,
+        )
 
 
 class FilteringDestination(InstallDestination):

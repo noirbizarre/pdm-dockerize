@@ -33,7 +33,7 @@ repos:
       - id: pdm-sync
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.22.0
+    rev: v3.27.0
     hooks:
       - id: commitizen
         additional_dependencies:
@@ -46,19 +46,19 @@ repos:
       - id: check-dependabot
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.7
+    rev: v0.4.10
     hooks:
       - id: ruff
         args: [--fix]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
+    rev: v1.10.1
     hooks:
       - id: mypy
         exclude: docs/.*\.pyi?$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
     - id: codespell
       additional_dependencies:
