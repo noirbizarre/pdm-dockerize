@@ -34,7 +34,7 @@ You can also install it as a standard `pdm` plugin.
 Either globally:
 
 ```console
-pdm self install pdm-dockerize
+pdm self add pdm-dockerize
 ```
 
 Either as a local plugin in your project:
