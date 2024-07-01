@@ -27,7 +27,7 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.15.4
+    rev: 2.16.1
     hooks:
       - id: pdm-lock-check
       - id: pdm-sync
@@ -46,7 +46,7 @@ repos:
       - id: check-dependabot
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.10
+    rev: v0.5.0
     hooks:
       - id: ruff
         args: [--fix]
