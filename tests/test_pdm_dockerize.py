@@ -33,7 +33,7 @@ def test_generate_docker_dist(project: Project, pdm: PDMCallable, snapshot: Snap
     project.pyproject.write()
     pdm("lock", obj=project, strict=True)
 
-    pdm("dockerize", obj=project, strict=True)
+    pdm("dockerize -v", obj=project, strict=True)
 
     dist = project.root / "dist/docker"
     assert dist.is_dir()
@@ -62,7 +62,7 @@ def test_generate_docker_dist_to_target(
 
     target = tmp_path / "target"
 
-    pdm(f"dockerize {target}", obj=project, strict=True)
+    pdm(f"dockerize -v {target}", obj=project, strict=True)
 
     dist = project.root / "dist/docker"
     assert not dist.exists()
@@ -125,7 +125,7 @@ def test_binaries_filtering(project: Project, pdm: PDMCallable, case: BinFilterC
     project.pyproject.write()
 
     pdm("lock", obj=project, strict=True)
-    pdm("dockerize", obj=project, strict=True)
+    pdm("dockerize -v", obj=project, strict=True)
 
     bindir = project.root / "dist/docker/bin"
     if bindir.exists():

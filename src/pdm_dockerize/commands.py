@@ -56,11 +56,11 @@ class DockerizeCommand(BaseCommand):
         requirements = []
         selection.validate()
         for group in selection:
-            requirements.extend(project.get_dependencies(group).values())
+            requirements.extend(project.get_dependencies(group))
         candidates = actions.resolve_candidates_from_lockfile(project, requirements)
         synchronizer = DockerizeSynchronizer(
-            candidates,
             env,
+            candidates,
             dry_run=options.dry_run,
             clean=False,
             no_editable=True,

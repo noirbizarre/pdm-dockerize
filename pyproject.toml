@@ -28,7 +28,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "pdm>=2.15",
+    "pdm>=2.19",
 ]
 [project.urls]
 Homepage = "https://github.com/noirbizarre/pdm-dockerize"
@@ -136,7 +136,7 @@ include = "*"
 
 
 [tool.pytest.ini_options]
-addopts = "-rfEX"
+addopts = "-ra --log-disable unearth.evaluator --log-disable unearth.collector --log-disable unearth.auth --log-disable pdm.termui"
 norecursedirs = ".git build dist"
 testpaths = [
   "src/",
