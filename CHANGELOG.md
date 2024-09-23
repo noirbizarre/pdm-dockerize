@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 🚀 0.6.0 (2024-09-23)
+
+### 🚨 Breaking changes
+
+- **pdm**: move to `pdm>=2.19` API
+
+
 ## 🚀 0.5.1 (2024-06-26)
 
 ### 🐛 Bug fixes
