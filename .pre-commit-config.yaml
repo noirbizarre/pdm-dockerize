@@ -16,7 +16,7 @@ repos:
       - id: check-hooks-apply
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
@@ -29,32 +29,32 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.19.0
+    rev: 2.19.2
     hooks:
       - id: pdm-lock-check
       - id: pdm-sync
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.28.0
+    rev: v3.29.1
     hooks:
       - id: commitizen
         additional_dependencies:
           - emotional==0.5.1
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.28.6
+    rev: 0.29.4
     hooks:
       - id: check-github-workflows
       - id: check-dependabot
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.4
+    rev: v0.6.9
     hooks:
       - id: ruff
         args: [--fix]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.0
+    rev: v1.11.2
     hooks:
       - id: mypy
         exclude: docs/.*\.pyi?$
