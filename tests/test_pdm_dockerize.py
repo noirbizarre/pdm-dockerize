@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 @pytest.fixture
 def project(project: Project) -> Project:
     project.pyproject.settings["dockerize"] = {"include": "*"}
-    project.pyproject.metadata["requires-python"] = ">=3.8"
+    project.pyproject.metadata["requires-python"] = ">=3.10"
     project.pyproject.metadata["dependencies"] = ["Faker"]
     project.pyproject.settings["scripts"] = {"test": "pytest"}
     return project
@@ -87,30 +87,32 @@ class BinFilterCase:
     id: str
     include: str | list[str] | None = None
     exclude: str | list[str] | None = None
-    expected: list[str] = field(default_factory=list)
+    expected: set[str] = field(default_factory=set)
 
 
 BIN_FILTER_CASES = (
     BinFilterCase("no-filter"),
     BinFilterCase(
-        "include-all", include="*", expected=["black", "blackd", "faker", "pytest", "py.test"]
+        "include-all",
+        include="*",
+        expected={"black", "blackd", "faker", "pytest", "py.test", "pygmentize"},
     ),
-    BinFilterCase("include-list", include=["faker", "black"], expected=["faker", "black"]),
+    BinFilterCase("include-list", include=["faker", "black"], expected={"faker", "black"}),
     BinFilterCase("exclude-all", include="*", exclude="*"),
     BinFilterCase(
         "exclude-list",
         include="*",
         exclude=["any", "blackd"],
-        expected=["black", "pytest", "py.test", "faker"],
+        expected={"black", "pytest", "py.test", "faker", "pygmentize"},
     ),
     BinFilterCase(
-        "include-all-but-prefix", include="*", exclude="py*", expected=["black", "blackd", "faker"]
+        "include-all-but-prefix", include="*", exclude="py*", expected={"black", "blackd", "faker"}
     ),
     BinFilterCase(
         "include-prefix-except",
         include="py*",
         exclude="py",
-        expected=["pytest", "py.test"],
+        expected={"pytest", "py.test", "pygmentize"},
     ),
 )
 
@@ -133,4 +135,4 @@ def test_binaries_filtering(project: Project, pdm: PDMCallable, case: BinFilterC
     else:
         bins = []
 
-    assert set(bins) == set(case.expected)
+    assert set(bins) == case.expected
