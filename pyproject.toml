@@ -134,6 +134,10 @@ testpaths = [
     "src/",
     "tests/",
 ]
+markers = [
+    "pdm_global_config: set PDM global config values for the test",
+    "pdm_local_config: set PDM local config values for the test",
+]
 
 
 [tool.coverage.run]

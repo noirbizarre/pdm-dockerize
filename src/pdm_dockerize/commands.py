@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import collections
 import os
 from pathlib import Path
+from typing import cast
 
 from pdm.cli import actions
 from pdm.cli.commands.base import BaseCommand
@@ -57,7 +59,16 @@ class DockerizeCommand(BaseCommand):
         selection.validate()
         for group in selection:
             requirements.extend(project.get_dependencies(group))
-        candidates = actions.resolve_candidates_from_lockfile(project, requirements)
+        # Always use the resolvelib resolver to read from pdm.lock,
+        # even when uv is configured as the project resolver.
+        # UvResolver would run `uv lock` (a full re-resolution) which is
+        # inappropriate here — we only need to read existing locked candidates.
+        config = cast(collections.ChainMap, project.config)
+        config.maps.insert(0, {"use_uv": False})
+        try:
+            candidates = actions.resolve_candidates_from_lockfile(project, requirements)
+        finally:
+            config.maps.pop(0)
         synchronizer = DockerizeSynchronizer(
             env,
             candidates,

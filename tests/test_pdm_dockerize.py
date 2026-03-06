@@ -53,6 +53,34 @@ def test_generate_docker_dist(project: Project, pdm: PDMCallable, snapshot: Snap
     assert (bin / "faker").is_file()
 
 
+@pytest.mark.pdm_global_config(use_uv=True)
+def test_generate_docker_dist_with_uv_resolver(
+    project: Project, pdm: PDMCallable, snapshot: SnapshotAssertion
+):
+    project.pyproject.settings["dockerize"]["include_bins"] = "*"
+    project.pyproject.write()
+    pdm("lock", obj=project, strict=True)
+
+    pdm("dockerize -v", obj=project, strict=True)
+
+    dist = project.root / "dist/docker"
+    assert dist.is_dir()
+
+    entrypoint = dist / "entrypoint"
+    assert entrypoint.exists()
+    assert os.access(entrypoint, os.X_OK)
+    assert entrypoint.read_text() == snapshot
+
+    lib = dist / "lib"
+    assert lib.is_dir()
+    assert (lib / "faker").is_dir()
+    assert not (lib / "faker").is_symlink()
+
+    bin = dist / "bin"
+    assert bin.is_dir()
+    assert (bin / "faker").is_file()
+
+
 def test_generate_docker_dist_to_target(
     project: Project, pdm: PDMCallable, snapshot: SnapshotAssertion, tmp_path: Path
 ):
