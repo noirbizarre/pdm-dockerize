@@ -5,8 +5,9 @@ authors = [
     {name = "Axel Haustant", email = "noirbizarre@gmail.com"},
 ]
 readme = "README.md"
-license = {text = "MIT"}
-requires-python = ">=3.8.1"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
 keywords = []
 dynamic = ["version"]
 classifiers = [
@@ -16,11 +17,11 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development",
     "Topic :: Software Development :: Build Tools",
     "Topic :: Software Development :: Code Generators",
@@ -43,23 +44,20 @@ dockerize = "pdm_dockerize:plugin"
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
-[tool.pdm]
-plugins = [
-    "sync-pre-commit-lock",
+
+[dependency-groups]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+    {include-group = "release"},
+    "tox>=4.22",
 ]
-
-[tool.pdm.version]
-source = "scm"
-write_to = "pdm_dockerize/VERSION"
-
-
-[tool.pdm.dev-dependencies]
 test = [
     "pdm[pytest]",
-    "pytest>=7.1.2",
-    "pytest-sugar>=0.9.5",
-    "pytest-cov>=3.0.0",
-    "syrupy>=3.0.6",
+    "pytest>=9.0.0",
+    "pytest-sugar>=1.0.0",
+    "coverage>=7.0.0",
+    "syrupy>=5.0.0",
     "shellcheck-py>=0.9.0.6",
 ]
 lint = [
@@ -68,14 +66,18 @@ lint = [
     "ruff>=0.3.0",
     "tomli; python_version<'3.11'",
 ]
-tox = [
-    "tox",
-    "tox-pdm>=0.5",
-]
 release = [
     "emotional",
 ]
 
+[tool.pdm]
+plugins = [
+    "sync-pre-commit-lock",
+]
+
+[tool.pdm.version]
+source = "scm"
+write_to = "pdm_dockerize/VERSION"
 
 [tool.pdm.scripts]
 test.help = "Run the test suite"
@@ -96,22 +98,20 @@ typing.help = "Full typing linting (includes imported packages and uncommmited f
 typing.cmd = "mypy src tests --warn-unused-ignores"
 
 cover.help = "Run the test suite with coverage"
-pre_cover = "coverage erase"
 cover.composite = [
-  """
-  test
-    --cov
-    --cov-report=term
-    --cov-report=html:reports/coverage
-    --cov-report=xml:reports/coverage.xml
-    --no-cov-on-fail
-    --junitxml=reports/tests.xml
-  """
+    "coverage erase",
+    "_cover:run {args}",
+    "coverage report --skip-covered",
+    "coverage html -d reports/coverage",
+    "_cover:xml",
 ]
+# Hidden shell tasks to benefit from variable expansion
+"_cover:run".shell = """
+    coverage run --append -m pytest \
+    --junitxml=${JUNIT_XML:-reports/junit.xml} \
+"""
+"_cover:xml".shell = "coverage xml -o ${COVERAGE_XML:-reports/coverage.xml}"
 
-"cover:all".help = "Run the test suite against all supported Python version"
-"pre_cover:all" = "coverage erase"
-"cover:all".cmd = "tox --parallel"
 
 changelog.help = "Update the changelog"
 changelog.cmd = "cz changelog --incremental"
@@ -124,23 +124,15 @@ order_by_scope = true
 version_provider = "scm"
 major_version_zero = true  # Remove this line for the first 1.x release
 
-
-[tool.pdm.ide]
-linters = ["ruff"]
-formatter = "black"
-testing = "pytest"
-
-
 [tool.pdm.dockerize]
 include = "*"
 
-
-[tool.pytest.ini_options]
-addopts = "-ra --log-disable unearth.evaluator --log-disable unearth.collector --log-disable unearth.auth --log-disable pdm.termui"
-norecursedirs = ".git build dist"
+[tool.pytest]
+addopts = ["-ra", "--log-disable", "unearth.evaluator", "--log-disable", "unearth.collector", "--log-disable", "unearth.auth", "--log-disable", "pdm.termui"]
+norecursedirs = [".git", "build", "dist"]
 testpaths = [
-  "src/",
-  "tests/",
+    "src/",
+    "tests/",
 ]
 
 
@@ -148,20 +140,20 @@ testpaths = [
 source = ["src"]
 branch = true
 omit = [
-  "tests/*",
+    "tests/*",
 ]
 
 [tool.coverage.report]
 exclude_also = [
-  'def __repr__',
-  'if TYPE_CHECKING:',
+    'def __repr__',
+    'if TYPE_CHECKING:',
 ]
 ignore_errors = true
-
 
 [tool.ruff]
 line-length = 100
 respect-gitignore = true
+show-fixes = true
 src = ["src", "tests"]
 
 [tool.ruff.lint]
@@ -178,6 +170,7 @@ select = [
     # isort
     "I001"
 ]
+extend-safe-fixes = ["C", "UP"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["pdm_dockerize"]
@@ -186,11 +179,21 @@ known-third-party = ["pytest", "syrupy"]
 
 [tool.mypy]
 exclude = [
-  "docs",
-  "build",
-  "dist",
+    "docs",
+    "build",
+    "dist",
 ]
 
 
 [tool.codespell]
 skip = '__snapshots__,./reports'
+
+
+[tool.tox]
+requires = ["tox>=4.22"]
+env_list = ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+[tool.tox.env_run_base]
+description = "Run tests suite against Python {base_python}"
+dependency_groups = ["test"]
+commands = [["pytest"]]

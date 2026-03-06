@@ -31,7 +31,7 @@ def project(project: Project, request: pytest.FixtureRequest) -> Project:
 
 
 class ScriptExtension(SingleFileSnapshotExtension):
-    _file_extension = "sh"
+    file_extension = "sh"
     _write_mode = WriteMode.TEXT
 
 
