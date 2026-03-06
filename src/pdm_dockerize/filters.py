@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from fnmatch import fnmatch
-from typing import Mapping
 
 
 def parse(data: Mapping, key: str) -> list[str]:
