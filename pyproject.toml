@@ -91,7 +91,7 @@ format.help = "Format the code according to known rules"
 format.composite = [
     "codespell --write-changes --interactive 2",
     # See: https://docs.astral.sh/ruff/formatter/#sorting-imports
-    "ruff check --select I --fix-only --show-fixes src tests",
+    "ruff check --select I,C,UP --fix-only --show-fixes src tests",
     "ruff format src tests"
 ]
 
