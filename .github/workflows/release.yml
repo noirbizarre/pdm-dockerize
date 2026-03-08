@@ -47,7 +47,7 @@ jobs:
           pdm config python.install_root $(uv python dir --color never)
 
       - name: Bump using commitizen
-        uses: commitizen-tools/commitizen-action@0.21.0
+        uses: commitizen-tools/commitizen-action@0.27.1
         with:
           github_token: ${{ secrets.PAT }}
           changelog_increment_filename: body.md
