@@ -65,6 +65,7 @@ lint = [
     "mypy>=1.5.1",
     "ruff>=0.3.0",
     "tomli; python_version<'3.11'",
+    "prek",
 ]
 release = [
     "emotional",
@@ -83,8 +84,8 @@ write_to = "pdm_dockerize/VERSION"
 test.help = "Run the test suite"
 test.cmd = "pytest"
 
-lint.help = "Lint all tracked files using pre-commit"
-lint.cmd = "pre-commit run --all-files"
+lint.help = "Lint all tracked files using prek"
+lint.cmd = "prek run --all-files"
 
 format.help = "Format the code according to known rules"
 format.composite = [
