@@ -32,7 +32,6 @@ repos:
     rev: 2.26.6
     hooks:
       - id: pdm-lock-check
-      - id: pdm-sync
 
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v4.13.9
