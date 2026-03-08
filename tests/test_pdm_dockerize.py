@@ -54,7 +54,7 @@ def test_generate_docker_dist(project: Project, pdm: PDMCallable, snapshot: Snap
 
 
 @pytest.mark.pdm_global_config(use_uv=True)
-def test_generate_docker_dist_with_uv_resolver(
+def test_generate_docker_dist_with_uv(
     project: Project, pdm: PDMCallable, snapshot: SnapshotAssertion
 ):
     project.pyproject.settings["dockerize"]["include_bins"] = "*"
@@ -75,8 +75,41 @@ def test_generate_docker_dist_with_uv_resolver(
     assert lib.is_dir()
     assert (lib / "faker").is_dir()
     assert not (lib / "faker").is_symlink()
+    # Ensure no leftover lib/bin from uv --target
+    assert not (lib / "bin").exists()
 
     bin = dist / "bin"
+    assert bin.is_dir()
+    assert (bin / "faker").is_file()
+
+
+@pytest.mark.pdm_global_config(use_uv=True)
+def test_generate_docker_dist_with_uv_to_target(
+    project: Project, pdm: PDMCallable, snapshot: SnapshotAssertion, tmp_path: Path
+):
+    project.pyproject.settings["dockerize"]["include_bins"] = "*"
+    project.pyproject.write()
+    pdm("lock", obj=project, strict=True)
+
+    target = tmp_path / "target"
+
+    pdm(f"dockerize -v {target}", obj=project, strict=True)
+
+    dist = project.root / "dist/docker"
+    assert not dist.exists()
+
+    entrypoint = target / "entrypoint"
+    assert entrypoint.exists()
+    assert os.access(entrypoint, os.X_OK)
+    assert entrypoint.read_text() == snapshot
+
+    lib = target / "lib"
+    assert lib.is_dir()
+    assert (lib / "faker").is_dir()
+    assert not (lib / "faker").is_symlink()
+    assert not (lib / "bin").exists()
+
+    bin = target / "bin"
     assert bin.is_dir()
     assert (bin / "faker").is_file()
 
@@ -162,5 +195,31 @@ def test_binaries_filtering(project: Project, pdm: PDMCallable, case: BinFilterC
         bins = [bin.name for bin in bindir.iterdir() if bin.is_file() and os.access(bin, os.X_OK)]
     else:
         bins = []
+
+    assert set(bins) == case.expected
+
+
+@pytest.mark.pdm_global_config(use_uv=True)
+@pytest.mark.parametrize("case", [pytest.param(case, id=case.id) for case in BIN_FILTER_CASES])
+def test_binaries_filtering_with_uv(project: Project, pdm: PDMCallable, case: BinFilterCase):
+    project.pyproject.metadata["dependencies"] = ["Faker", "pytest", "black"]
+    if case.include:
+        project.pyproject.settings["dockerize"]["include_bins"] = case.include
+    if case.exclude:
+        project.pyproject.settings["dockerize"]["exclude_bins"] = case.exclude
+    project.pyproject.write()
+
+    pdm("lock", obj=project, strict=True)
+    pdm("dockerize -v", obj=project, strict=True)
+
+    bindir = project.root / "dist/docker/bin"
+    if bindir.exists():
+        bins = [bin.name for bin in bindir.iterdir() if bin.is_file() and os.access(bin, os.X_OK)]
+    else:
+        bins = []
+
+    # Ensure no leftover lib/bin from uv --target
+    libbin = project.root / "dist/docker/lib/bin"
+    assert not libbin.exists()
 
     assert set(bins) == case.expected

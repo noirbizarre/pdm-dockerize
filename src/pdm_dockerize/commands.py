@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import logging
 import os
 from pathlib import Path
 from typing import cast
@@ -13,10 +14,13 @@ from pdm.cli.hooks import HookManager
 from pdm.cli.options import Option, dry_run_option, groups_group, lockfile_option
 from pdm.cli.utils import check_project_file
 from pdm.environments import PythonLocalEnvironment
+from pdm.exceptions import PdmUsageError
 from pdm.project import Project
 
 from .entrypoint import ProjectEntrypoint
-from .installer import DockerizeSynchronizer
+from .installer import DockerizeSynchronizer, DockerizeUvSynchronizer
+
+logger = logging.getLogger(__name__)
 
 
 class DockerizeEnvironment(PythonLocalEnvironment):
@@ -69,18 +73,35 @@ class DockerizeCommand(BaseCommand):
             candidates = actions.resolve_candidates_from_lockfile(project, requirements)
         finally:
             config.maps.pop(0)
-        synchronizer = DockerizeSynchronizer(
-            env,
-            candidates,
-            dry_run=options.dry_run,
-            clean=False,
-            no_editable=True,
-            reinstall=False,
-            only_keep=False,
-            install_self=False,
-            fail_fast=True,
-            use_install_cache=False,
-        )
+
+        use_uv = project.config.get("use_uv", False)
+        if use_uv:
+            try:
+                project.core.uv_cmd  # noqa: B018 — verify uv is available
+                synchronizer = DockerizeUvSynchronizer(
+                    project,
+                    env,
+                    candidates,
+                    dry_run=options.dry_run,
+                )
+            except PdmUsageError:
+                project.core.ui.echo("[warning]uv not found, falling back to pip-based installer")
+                use_uv = False
+
+        if not use_uv:
+            synchronizer = DockerizeSynchronizer(
+                env,
+                candidates,
+                dry_run=options.dry_run,
+                clean=False,
+                no_editable=True,
+                reinstall=False,
+                only_keep=False,
+                install_self=False,
+                fail_fast=True,
+                use_install_cache=False,
+            )
+
         synchronizer.synchronize()
 
         entrypoint = env.packages_path / "entrypoint"
