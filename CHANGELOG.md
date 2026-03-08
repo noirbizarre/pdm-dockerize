@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 🚀 0.7.0 (2026-03-08)
+
+### 🚨 Breaking changes
+
+- update the stack, drop support for Python<3.14, add support for Python 3.13 and 3.14 ([#14](https://github.com/noirbizarre/pdm-dockerize/issues/14))
+
+### 💫 New features
+
+- **uv**: add support for `uv` (as downloader) when `use_uv=True` ([#15](https://github.com/noirbizarre/pdm-dockerize/issues/15))
+
+
 ## 🚀 0.6.0 (2024-09-23)
 
 ### 🚨 Breaking changes
