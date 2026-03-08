@@ -35,4 +35,16 @@ jobs:
         run: pdm sync -d -G test
 
       - name: Run Tests
-        run: pdm cover -v --force-sugar --color=yes
+        run: pdm cover -v --force-sugar --color=yes  -o junit_family=legacy
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          directory: reports
+
+      - name: Upload test results to Codecov
+        uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
+        with:
+          directory: reports
+          report_type: test_results

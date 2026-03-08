@@ -4,6 +4,7 @@
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/noirbizarre/pdm-dockerize/main.svg)](https://results.pre-commit.ci/latest/github/noirbizarre/pdm-dockerize/main)
 [![PyPI](https://img.shields.io/pypi/v/pdm-dockerize)](https://pypi.org/project/pdm-dockerize/)
 [![PyPI - License](https://img.shields.io/pypi/l/pdm-dockerize)](https://pypi.org/project/pdm-dockerize/)
+[![codecov](https://codecov.io/gh/noirbizarre/pdm-dockerize/graph/badge.svg?token=P949azXcf0)](https://codecov.io/gh/noirbizarre/pdm-dockerize)
 
 Help generating docker image from PDM projects.
 
