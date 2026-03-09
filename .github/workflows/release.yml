@@ -31,7 +31,7 @@ jobs:
           token: ${{ secrets.PAT }}
 
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
