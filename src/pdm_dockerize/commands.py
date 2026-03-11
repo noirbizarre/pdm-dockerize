@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import argparse
 import collections
-import logging
+import dataclasses
 import os
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from pdm.cli import actions
 from pdm.cli.commands.base import BaseCommand
@@ -20,7 +20,43 @@ from pdm.project import Project
 from .entrypoint import ProjectEntrypoint
 from .installer import DockerizeSynchronizer, DockerizeUvSynchronizer
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from pdm.models.requirements import Requirement
+
+
+def _adapt_requirements_for_lockfile(
+    requirements: list[Requirement],
+    project: Project,
+) -> list[Requirement]:
+    """Adapt requirements to match the lockfile's extras format.
+
+    UV-generated lockfiles store each extra as a separate entry
+    (e.g., ``pkg[a]`` and ``pkg[b]``), while resolvelib-generated lockfiles
+    combine them into a single entry (``pkg[a,b]``).
+
+    When the lockfile uses split entries, a combined-extras requirement like
+    ``pkg[a,b]`` will fail to match because resolvelib's ``_matching_entries()``
+    does exact string comparison on the candidate identity.
+
+    This function detects the lockfile format and splits combined-extras
+    requirements into individual single-extra requirements when needed.
+    """
+    locked_repo = project.get_locked_repository()
+    package_keys = {key[0] for key in locked_repo.packages}
+
+    result: list[Requirement] = []
+    for req in requirements:
+        if req.extras and len(req.extras) > 1:
+            combined_id = req.identify()
+            if combined_id not in package_keys:
+                # Combined entry not found — check for individual split entries
+                split_ids = [f"{req.key}[{extra}]" for extra in req.extras]
+                if all(sid in package_keys for sid in split_ids):
+                    for extra in req.extras:
+                        result.append(dataclasses.replace(req, extras=(extra,)))
+                    continue
+        result.append(req)
+    return result
 
 
 class DockerizeEnvironment(PythonLocalEnvironment):
@@ -70,6 +106,7 @@ class DockerizeCommand(BaseCommand):
         config = cast(collections.ChainMap, project.config)
         config.maps.insert(0, {"use_uv": False})
         try:
+            requirements = _adapt_requirements_for_lockfile(requirements, project)
             candidates = actions.resolve_candidates_from_lockfile(project, requirements)
         finally:
             config.maps.pop(0)
