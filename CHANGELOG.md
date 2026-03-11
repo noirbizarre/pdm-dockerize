@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 🚀 0.7.1 (2026-03-11)
+
+### 🐛 Bug fixes
+
+- **uv**: support multiple extras in lock file ([#20](https://github.com/noirbizarre/pdm-dockerize/issues/20))
+
+### 📖 Documentation
+
+- **README**: fix and update the README with undocumented features ([#21](https://github.com/noirbizarre/pdm-dockerize/issues/21))
+
+
 ## 🚀 0.7.0 (2026-03-08)
 
 ### 🚨 Breaking changes
