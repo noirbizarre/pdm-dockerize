@@ -62,10 +62,9 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           body_path: "body.md"
-          tag_name: ${{ env.REVISION }}
           files: dist/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+          tag_name: ${{ env.REVISION }}
+          token: ${{ secrets.PAT }}
 
       - name: Publish on PyPI
         run: pdm publish --no-build
