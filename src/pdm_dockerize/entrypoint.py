@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from pdm.cli.commands.run import RE_ARGS_PLACEHOLDER, TaskRunner, exec_opts
+from pdm.cli.commands.run import RE_ARGS_PLACEHOLDER, TaskRunner, merge_options
 
 from . import filters
 
@@ -153,7 +153,7 @@ class ProjectEntrypoint:
     def script_for(self, task: Task, params: str | None = None) -> str:
         """Render the script part for a single task"""
         out = io.StringIO()
-        opts = exec_opts(self.runner.global_options, task.options)
+        opts = merge_options(self.runner.global_options, task.options)
         if (envfile := opts.get("env_file")) and isinstance(envfile, str):
             out.write(self.source_env(envfile, indent=2))
 

@@ -4,13 +4,13 @@ import json
 import shutil
 import subprocess
 from collections.abc import Iterable
+from importlib.metadata import Distribution
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from installer.destinations import Scheme
 from installer.records import RecordEntry
 from pdm import termui
-from pdm.compat import Distribution
 from pdm.installers import Synchronizer
 from pdm.installers.installers import InstallDestination, WheelFile, install
 from pdm.installers.manager import InstallManager

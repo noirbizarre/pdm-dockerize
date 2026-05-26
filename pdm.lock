@@ -5,7 +5,7 @@
 groups = ["default", "dev", "lint", "release", "test"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:2ce4be8715c48b373009866b9ecf637c147899157b03bfe5f2a24c76baf38822"
+content_hash = "sha256:ed2a3749d62b08b3ba39bc299d17bb9fa5d954bbcf38a64c8b84fe86387246f5"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -516,11 +516,11 @@ files = [
 
 [[package]]
 name = "installer"
-version = "0.7.0"
+version = "1.0.1"
 summary = ""
 files = [
-    {file = "installer-0.7.0-py3-none-any.whl", hash = "sha256:05d1933f0a5ba7d8d6296bb6d5018e7c94fa473ceb10cf198a92ccea19c27b53"},
-    {file = "installer-0.7.0.tar.gz", hash = "sha256:a26d3e3116289bb08216e0d0f7d925fcef0b0194eedfa0c944bcaaa106c4b631"},
+    {file = "installer-1.0.1-py3-none-any.whl", hash = "sha256:011d045df8b954ced7dde3a7e42ae4418da40ecda7990f2d11d5ed7c146fd98b"},
+    {file = "installer-1.0.1.tar.gz", hash = "sha256:052c7fc3721d54c696e2dea019be67539d7b144e924f559f54beb3121831c364"},
 ]
 
 [[package]]
@@ -871,7 +871,7 @@ files = [
 
 [[package]]
 name = "pdm"
-version = "2.26.6"
+version = "2.27.0"
 summary = ""
 dependencies = [
     "blinker",
@@ -899,23 +899,23 @@ dependencies = [
     "virtualenv",
 ]
 files = [
-    {file = "pdm-2.26.6-py3-none-any.whl", hash = "sha256:39583edee738cc62b9ec2d5b4e434f44e501b55f609401a89732b5e8a451944f"},
-    {file = "pdm-2.26.6.tar.gz", hash = "sha256:771f95b9a484f9eb34dcf8d851be6ff95333e4f3c46189f9004cfd5cc2e925f9"},
+    {file = "pdm-2.27.0-py3-none-any.whl", hash = "sha256:2f56c4a8f01809564430fb35e850c0b9f56f45e71f272b35dece4db0d558a3aa"},
+    {file = "pdm-2.27.0.tar.gz", hash = "sha256:dbfbc484065d0150fa5b29484ead908354313d8699cf74c099d4531826bd04de"},
 ]
 
 [[package]]
 name = "pdm"
-version = "2.26.6"
+version = "2.27.0"
 extras = ["pytest"]
 summary = ""
 dependencies = [
-    "pdm==2.26.6",
+    "pdm==2.27.0",
     "pytest",
     "pytest-mock",
 ]
 files = [
-    {file = "pdm-2.26.6-py3-none-any.whl", hash = "sha256:39583edee738cc62b9ec2d5b4e434f44e501b55f609401a89732b5e8a451944f"},
-    {file = "pdm-2.26.6.tar.gz", hash = "sha256:771f95b9a484f9eb34dcf8d851be6ff95333e4f3c46189f9004cfd5cc2e925f9"},
+    {file = "pdm-2.27.0-py3-none-any.whl", hash = "sha256:2f56c4a8f01809564430fb35e850c0b9f56f45e71f272b35dece4db0d558a3aa"},
+    {file = "pdm-2.27.0.tar.gz", hash = "sha256:dbfbc484065d0150fa5b29484ead908354313d8699cf74c099d4531826bd04de"},
 ]
 
 [[package]]
