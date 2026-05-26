@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 🚀 0.7.2 (2026-05-26)
+
+### 🐛 Bug fixes
+
+- **pdm**: adapt to PDM 2.27 breaking changes ([#25](https://github.com/noirbizarre/pdm-dockerize/issues/25))
+
+
 ## 🚀 0.7.1 (2026-03-11)
 
 ### 🐛 Bug fixes
