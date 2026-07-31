@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+import pytest
 from packaging.specifiers import SpecifierSet
 from pdm.models.requirements import NamedRequirement, Requirement
 
-from pdm_dockerize.commands import _adapt_requirements_for_lockfile
+from pdm_dockerize.commands import (
+    _adapt_locked_dependencies,
+    _adapt_requirements_for_lockfile,
+    _adapted_locked_repository,
+)
 
 
 def _make_req(name: str, extras: tuple[str, ...] | None = None) -> Requirement:
@@ -13,17 +18,24 @@ def _make_req(name: str, extras: tuple[str, ...] | None = None) -> Requirement:
     return NamedRequirement(name=name, extras=extras)
 
 
-def _make_project(package_keys: set[str]) -> MagicMock:
-    """Create a mock project whose locked repository has the given identity keys.
+def _make_repo(packages: dict[str, list[str] | None]) -> MagicMock:
+    """Create a mock locked repository from an identity key to dependency lines mapping.
 
-    ``package_keys`` should contain identity strings such as ``"pkg"`` or
-    ``"pkg[extra]"`` — they are expanded into ``CandidateKey`` tuples
-    internally.
+    Keys are identity strings such as ``"pkg"`` or ``"pkg[extra]"`` — they are
+    expanded into ``CandidateKey`` tuples internally.
     """
     locked_repo = MagicMock()
-    locked_repo.packages = {(key, None, None, False): MagicMock() for key in package_keys}
+    locked_repo.packages = {
+        (key, None, None, False): MagicMock(dependencies=dependencies)
+        for key, dependencies in packages.items()
+    }
+    return locked_repo
+
+
+def _make_project(package_keys: set[str]) -> MagicMock:
+    """Create a mock project whose locked repository has the given identity keys."""
     project = MagicMock()
-    project.get_locked_repository.return_value = locked_repo
+    project.get_locked_repository.return_value = _make_repo(dict.fromkeys(package_keys, []))
     return project
 
 
@@ -165,3 +177,125 @@ class TestAdaptRequirementsForLockfile:
         result = _adapt_requirements_for_lockfile([], project)
 
         assert result == []
+
+
+def _dependencies(repo: MagicMock, key: str) -> list[str] | None:
+    """Get back the (possibly adapted) dependency lines of a locked package."""
+    return repo.packages[(key, None, None, False)].dependencies
+
+
+class TestAdaptLockedDependencies:
+    """Tests for _adapt_locked_dependencies()."""
+
+    def test_transitive_combined_extras_split_for_uv_lockfile(self):
+        """A locked dependency with combined extras is split into single-extra ones."""
+        repo = _make_repo(
+            {
+                "root": ["foo[extra1,extra2]"],
+                "foo": None,
+                "foo[extra1]": None,
+                "foo[extra2]": None,
+            }
+        )
+
+        _adapt_locked_dependencies(repo)
+
+        assert _dependencies(repo, "root") == ["foo[extra1]", "foo[extra2]"]
+
+    def test_transitive_combined_extras_kept_for_resolvelib_lockfile(self):
+        """A locked dependency is left untouched when the combined entry exists."""
+        repo = _make_repo({"root": ["foo[extra1,extra2]"], "foo[extra1,extra2]": None})
+
+        _adapt_locked_dependencies(repo)
+
+        assert _dependencies(repo, "root") == ["foo[extra1,extra2]"]
+
+    def test_partial_split_entries_no_split(self):
+        """If only some split entries exist, don't split (safety fallback)."""
+        repo = _make_repo({"root": ["foo[extra1,extra2]"], "foo[extra1]": None})
+
+        _adapt_locked_dependencies(repo)
+
+        assert _dependencies(repo, "root") == ["foo[extra1,extra2]"]
+
+    def test_other_dependencies_untouched(self):
+        """Plain and single-extra dependencies are preserved as-is."""
+        repo = _make_repo(
+            {
+                "root": ["plain>=1.0", "single[x]", "foo[a,b]"],
+                "plain": None,
+                "single[x]": None,
+                "foo[a]": None,
+                "foo[b]": None,
+            }
+        )
+
+        _adapt_locked_dependencies(repo)
+
+        assert _dependencies(repo, "root") == ["plain>=1.0", "single[x]", "foo[a]", "foo[b]"]
+
+    def test_specifier_and_marker_preserved(self):
+        """Splitting preserves the version specifier and the environment marker."""
+        repo = _make_repo(
+            {
+                "root": ['foo[a,b]>=1.0; python_version >= "3.13"'],
+                "foo[a]": None,
+                "foo[b]": None,
+            }
+        )
+
+        _adapt_locked_dependencies(repo)
+
+        lines = _dependencies(repo, "root")
+        assert lines is not None
+        assert len(lines) == 2
+        for line, extra in zip(lines, ("a", "b"), strict=True):
+            assert line.startswith(f"foo[{extra}]>=1.0")
+            assert 'python_version >= "3.13"' in line
+
+    @pytest.mark.parametrize("dependencies", [None, []], ids=["none", "empty"])
+    def test_packages_without_dependencies(self, dependencies: list[str] | None):
+        """Packages without dependencies are skipped."""
+        repo = _make_repo({"root": dependencies})
+
+        _adapt_locked_dependencies(repo)
+
+        assert _dependencies(repo, "root") == dependencies
+
+
+class TestAdaptedLockedRepository:
+    """Tests for _adapted_locked_repository()."""
+
+    class FakeProject:
+        """A minimal stand-in for a real ``Project``.
+
+        ``MagicMock`` can not be used here: the context manager restores the
+        original method by deleting the instance attribute shadowing it, which
+        mocks handle differently from regular objects.
+        """
+
+        def __init__(self, repo: MagicMock | None = None) -> None:
+            self.repo = repo
+
+        def get_locked_repository(self, *args, **kwargs) -> MagicMock | None:
+            return self.repo
+
+    def test_adapts_every_repository_and_restores_the_method(self):
+        """Repositories built in the context are adapted, and the method is restored after."""
+        repo = _make_repo({"root": ["foo[a,b]"], "foo[a]": None, "foo[b]": None})
+        project = self.FakeProject(repo)
+
+        with _adapted_locked_repository(project):
+            assert _dependencies(project.get_locked_repository(), "root") == ["foo[a]", "foo[b]"]
+
+        assert "get_locked_repository" not in vars(project)
+        assert project.get_locked_repository() is repo
+
+    def test_method_restored_on_error(self):
+        """The original method is restored even when the context body raises."""
+        project = self.FakeProject()
+
+        with pytest.raises(RuntimeError), _adapted_locked_repository(project):
+            raise RuntimeError("boom")
+
+        assert "get_locked_repository" not in vars(project)
