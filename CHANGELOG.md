@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 🚀 0.7.3 (2026-07-31)
+
+### 🐛 Bug fixes
+
+- **dockerize**: do not write the entrypoint on --dry-run ([#30](https://github.com/noirbizarre/pdm-dockerize/issues/30))
+- **uv**: support multiple extras in transitive dependencies ([#29](https://github.com/noirbizarre/pdm-dockerize/issues/29))
+
+
 ## 🚀 0.7.2 (2026-05-26)
 
 ### 🐛 Bug fixes
