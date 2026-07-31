@@ -143,6 +143,31 @@ def test_generate_docker_dist_to_target(
     assert (bin / "faker").is_file()
 
 
+def _assert_dry_run(project: Project, pdm: PDMCallable) -> None:
+    project.pyproject.settings["dockerize"]["include_bins"] = "*"
+    project.pyproject.write()
+    pdm("lock", obj=project, strict=True)
+
+    result = pdm("dockerize --dry-run", obj=project, strict=True)
+
+    dist = project.root / "dist/docker"
+    assert not (dist / "entrypoint").exists()
+    assert not (dist / "lib").exists()
+    assert not (dist / "bin").exists()
+
+    assert "would write the following entrypoint script" in result.output
+    assert "#!/usr/bin/env sh" in result.output
+
+
+def test_dry_run_does_not_write(project: Project, pdm: PDMCallable):
+    _assert_dry_run(project, pdm)
+
+
+@pytest.mark.pdm_global_config(use_uv=True)
+def test_dry_run_does_not_write_with_uv(project: Project, pdm: PDMCallable):
+    _assert_dry_run(project, pdm)
+
+
 @dataclass
 class BinFilterCase:
     id: str

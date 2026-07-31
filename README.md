@@ -168,7 +168,7 @@ pdm dockerize [OPTIONS] [TARGET]
 | `--prod` / `--production`             | Select production dependencies only                  |
 | `-G GROUP` / `--group GROUP`          | Select a specific dependency group (can be repeated) |
 | `--no-default`                        | Do not include the default dependencies              |
-| `--dry-run`                           | Preview what would be installed without writing      |
+| `--dry-run`                           | Preview packages and entrypoint script without writing |
 | `-L LOCKFILE` / `--lockfile LOCKFILE` | Use an alternative lockfile                          |
 
 ### Selecting scripts

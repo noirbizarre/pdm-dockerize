@@ -207,6 +207,13 @@ class DockerizeCommand(BaseCommand):
 
         synchronizer.synchronize()
 
+        script = ProjectEntrypoint(project, hooks).as_script()
+
+        if options.dry_run:
+            project.core.ui.echo("Dry run: would write the following entrypoint script:")
+            project.core.ui.echo(script)
+            return
+
         entrypoint = env.packages_path / "entrypoint"
-        entrypoint.write_text(ProjectEntrypoint(project, hooks).as_script())
+        entrypoint.write_text(script)
         os.chmod(entrypoint, 0o555)
