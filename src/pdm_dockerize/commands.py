@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import contextlib
 import dataclasses
 import os
 from pathlib import Path
@@ -15,48 +16,112 @@ from pdm.cli.options import Option, dry_run_option, groups_group, lockfile_optio
 from pdm.cli.utils import check_project_file
 from pdm.environments import PythonLocalEnvironment
 from pdm.exceptions import PdmUsageError
+from pdm.models.requirements import parse_line
 from pdm.project import Project
 
 from .entrypoint import ProjectEntrypoint
 from .installer import DockerizeSynchronizer, DockerizeUvSynchronizer
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from pdm.models.repositories.lock import LockedRepository
     from pdm.models.requirements import Requirement
+
+
+def _split_combined_extras(req: Requirement, package_keys: set[str]) -> list[Requirement] | None:
+    """Split a combined-extras requirement into single-extra requirements.
+
+    UV-generated lockfiles store each extra as a separate entry
+    (e.g., ``pkg[a]`` and ``pkg[b]``), while resolvelib-generated lockfiles
+    combine them into a single entry (``pkg[a,b]``).
+
+    Returns the per-extra requirements when ``req`` has combined extras which
+    are stored as separate entries in the lock file, ``None`` otherwise
+    (nothing to adapt).
+    """
+    if not req.extras or len(req.extras) < 2:
+        return None
+    if req.identify() in package_keys:
+        # Combined entry found: resolvelib-style lock file, nothing to do
+        return None
+    split = [dataclasses.replace(req, extras=(extra,)) for extra in sorted(req.extras)]
+    if not all(r.identify() in package_keys for r in split):
+        # Not all individual entries are present: leave it untouched (safety fallback)
+        return None
+    return split
 
 
 def _adapt_requirements_for_lockfile(
     requirements: list[Requirement],
     project: Project,
 ) -> list[Requirement]:
-    """Adapt requirements to match the lockfile's extras format.
+    """Adapt the project requirements to match the lockfile's extras format.
 
-    UV-generated lockfiles store each extra as a separate entry
-    (e.g., ``pkg[a]`` and ``pkg[b]``), while resolvelib-generated lockfiles
-    combine them into a single entry (``pkg[a,b]``).
+    A combined-extras requirement like ``pkg[a,b]`` will fail to match a uv
+    generated lock file because resolvelib's ``_matching_entries()`` does exact
+    string comparison on the candidate identity.
 
-    When the lockfile uses split entries, a combined-extras requirement like
-    ``pkg[a,b]`` will fail to match because resolvelib's ``_matching_entries()``
-    does exact string comparison on the candidate identity.
-
-    This function detects the lockfile format and splits combined-extras
-    requirements into individual single-extra requirements when needed.
+    See :func:`_split_combined_extras`.
     """
     locked_repo = project.get_locked_repository()
     package_keys = {key[0] for key in locked_repo.packages}
 
     result: list[Requirement] = []
     for req in requirements:
-        if req.extras and len(req.extras) > 1:
-            combined_id = req.identify()
-            if combined_id not in package_keys:
-                # Combined entry not found — check for individual split entries
-                split_ids = [f"{req.key}[{extra}]" for extra in req.extras]
-                if all(sid in package_keys for sid in split_ids):
-                    for extra in req.extras:
-                        result.append(dataclasses.replace(req, extras=(extra,)))
-                    continue
-        result.append(req)
+        result.extend(_split_combined_extras(req, package_keys) or [req])
     return result
+
+
+def _adapt_locked_dependencies(repo: LockedRepository) -> None:
+    """Adapt the locked packages dependencies to match the lockfile's extras format.
+
+    Combined extras are not only found in the project requirements:
+    a locked package can require another one with multiple extras
+    (``pkg[a,b]``), in which case resolvelib will fail to find the
+    corresponding entry while walking the dependency tree.
+
+    Dependencies are rewritten in place, so that transitive combined-extras
+    requirements are split the same way the project ones are.
+
+    See :func:`_split_combined_extras`.
+    """
+    package_keys = {key[0] for key in repo.packages}
+    for package in repo.packages.values():
+        if not package.dependencies:
+            continue
+        adapted: list[str] = []
+        changed = False
+        for line in package.dependencies:
+            if split := _split_combined_extras(parse_line(line), package_keys):
+                adapted.extend(req.as_line() for req in split)
+                changed = True
+            else:
+                adapted.append(line)
+        if changed:
+            package.dependencies[:] = adapted
+
+
+@contextlib.contextmanager
+def _adapted_locked_repository(project: Project) -> Iterator[None]:
+    """Adapt every :class:`LockedRepository` built by ``project`` in this context.
+
+    ``pdm`` builds a new locked repository on each
+    :meth:`~pdm.project.Project.get_locked_repository` call, including deep
+    inside the resolution, so the adaptation is injected at the source.
+    """
+    original = project.get_locked_repository
+
+    def get_locked_repository(*args, **kwargs) -> LockedRepository:
+        repo = original(*args, **kwargs)
+        _adapt_locked_dependencies(repo)
+        return repo
+
+    project.get_locked_repository = get_locked_repository  # type: ignore[method-assign]
+    try:
+        yield
+    finally:
+        del project.get_locked_repository  # type: ignore[method-assign]
 
 
 class DockerizeEnvironment(PythonLocalEnvironment):
@@ -106,8 +171,9 @@ class DockerizeCommand(BaseCommand):
         config = cast(collections.ChainMap, project.config)
         config.maps.insert(0, {"use_uv": False})
         try:
-            requirements = _adapt_requirements_for_lockfile(requirements, project)
-            candidates = actions.resolve_candidates_from_lockfile(project, requirements)
+            with _adapted_locked_repository(project):
+                requirements = _adapt_requirements_for_lockfile(requirements, project)
+                candidates = actions.resolve_candidates_from_lockfile(project, requirements)
         finally:
             config.maps.pop(0)
 
