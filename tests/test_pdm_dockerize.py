@@ -28,6 +28,19 @@ def test_expose_version():
     assert pdm_dockerize.__version__
 
 
+def test_generate_docker_dist_without_dependencies(project: Project, pdm: PDMCallable):
+    """The output directory is only created by the installers"""
+    project.pyproject.metadata["dependencies"] = []
+    project.pyproject.write()
+    pdm("lock", obj=project, strict=True)
+
+    pdm("dockerize -v", obj=project, strict=True)
+
+    entrypoint = project.root / "dist/docker/entrypoint"
+    assert entrypoint.is_file()
+    assert os.access(entrypoint, os.X_OK)
+
+
 def test_generate_docker_dist(project: Project, pdm: PDMCallable, snapshot: SnapshotAssertion):
     project.pyproject.settings["dockerize"]["include_bins"] = "*"
     project.pyproject.write()

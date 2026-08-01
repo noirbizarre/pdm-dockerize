@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 import pytest
 import tomlkit
@@ -70,6 +70,8 @@ class AddMemberFixture(Protocol):
         path: str | None = None,
         dependencies: list[str] | None = None,
         scripts: dict[str, str] | None = None,
+        pdm_scripts: dict[str, Any] | None = None,
+        dockerize: dict[str, Any] | None = None,
         distribution: bool = True,
     ) -> Path: ...
 
@@ -81,6 +83,10 @@ def add_member(project: Project) -> AddMemberFixture:
     Members must exist on disk: `Project.iter_members()` filters on the presence
     of a `pyproject.toml` and `iter_workspace_dependencies()` requires the member
     to be a named distribution.
+
+    `scripts` are `[project.scripts]` console entry points, while `pdm_scripts`
+    and `dockerize` are the member's `[tool.pdm.scripts]` and
+    `[tool.pdm.dockerize]` sections.
     """
 
     def factory(
@@ -89,6 +95,8 @@ def add_member(project: Project) -> AddMemberFixture:
         path: str | None = None,
         dependencies: list[str] | None = None,
         scripts: dict[str, str] | None = None,
+        pdm_scripts: dict[str, Any] | None = None,
+        dockerize: dict[str, Any] | None = None,
         distribution: bool = True,
     ) -> Path:
         module = name.replace("-", "_")
@@ -112,8 +120,15 @@ def add_member(project: Project) -> AddMemberFixture:
             "project": metadata,
             "build-system": {"requires": ["pdm-backend"], "build-backend": "pdm.backend"},
         }
+        tool_pdm: dict = {}
         if not distribution:
-            data["tool"] = {"pdm": {"distribution": False}}
+            tool_pdm["distribution"] = False
+        if pdm_scripts:
+            tool_pdm["scripts"] = pdm_scripts
+        if dockerize is not None:
+            tool_pdm["dockerize"] = dockerize
+        if tool_pdm:
+            data["tool"] = {"pdm": tool_pdm}
         (member_dir / "pyproject.toml").write_text(tomlkit.dumps(data))
         return member_dir
 
@@ -136,3 +151,26 @@ def workspace(project: Project, add_member: AddMemberFixture) -> Project:
     project.pyproject.metadata["dependencies"] = []
     project.pyproject.write()
     return project
+
+
+class MemberFixture(Protocol):
+    def __call__(self, name: str = ...) -> Project: ...
+
+
+@pytest.fixture
+def member(project: Project) -> MemberFixture:
+    """Build a `Project` for a member of the current workspace.
+
+    The factory is called from the test body, once the workspace
+    `pyproject.toml` has been written: `Project.pyproject` and
+    `Project.workspace_project` are both cached properties.
+    """
+
+    def factory(name: str = "member-a") -> Project:
+        member_project = project.core.create_project(project.root / "packages" / name)
+        # Guard against a fixture ordering regression silently degrading
+        # the tests to the plain, non-workspace code path
+        assert member_project.workspace_project is not None
+        return member_project
+
+    return factory

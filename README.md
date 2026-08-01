@@ -302,32 +302,14 @@ serve = "uvicorn api.main:app --host 0.0.0.0"
 migrate = "alembic upgrade head"
 ```
 
-running `pdm dockerize` from the workspace root installs every workspace member,
+### Building a single image for the whole workspace
+
+Running `pdm dockerize` from the workspace root installs every workspace member,
 along with their transitive dependencies, into the output directory,
 and exposes their console scripts (subject to `include_bins`/`exclude_bins`).
 
 Members are installed as regular (**non-editable**) packages,
 so the resulting image is self-contained and never references build-time host paths.
-
-### Running from the workspace root
-
-Like `pdm install`, `pdm lock` and `pdm sync`, the `dockerize` command must be run from the workspace root,
-since members share a single lockfile and a single environment:
-
-```console
-$ cd packages/api && pdm dockerize
-[PdmUsageError]: `pdm dockerize` can only be run from the workspace root: /path/to/my-workspace
-```
-
-Building one image per member is not supported: a workspace produces a single image.
-Use `include`/`exclude` to select which scripts that image exposes.
-
-### Configuration is read from the workspace root only
-
-**The `tool.pdm.dockerize` and `tool.pdm.scripts` sections are only read from the workspace root `pyproject.toml`.**
-Those sections are ignored in members.
-
-### Which members are included
 
 A member is installed when it is matched by `[tool.pdm.workspace] members`,
 has a `project.name` and is a distribution
@@ -335,8 +317,6 @@ has a `project.name` and is a distribution
 
 Members are treated as implicit `default` group dependencies,
 so they are excluded by selections dropping that group, such as `--no-default`.
-
-### Dockerfile
 
 Members must be present in the build stage so their wheels can be built:
 make sure your `.dockerignore` does not exclude the members directory.
@@ -346,6 +326,54 @@ COPY pyproject.toml pdm.lock ./
 COPY packages/ ./packages/
 RUN pdm dockerize
 ```
+
+### Building one image per member
+
+Running `pdm dockerize` from a member, or targeting it with `--project`,
+builds an image for **that member only**:
+
+```console
+$ cd packages/api && pdm dockerize
+$ pdm --project packages/api dockerize    # equivalent
+```
+
+- the member dependencies are installed into `packages/api/dist/docker/lib`,
+  including the **sibling members it depends on**, as non-editable packages;
+- the members it does not depend on are **not** installed;
+- like any dockerized project, the member itself is **not** installed:
+  its sources are exposed through `PYTHONPATH`, so they have to be in the image.
+
+```dockerfile
+COPY packages/api /app
+COPY packages/api/dist/docker /app
+WORKDIR /app
+ENTRYPOINT ["/app/entrypoint"]
+```
+
+Declare a dependency on a sibling member by name:
+
+```toml
+[project]
+name = "api"
+dependencies = ["shared"]
+```
+
+### Where the configuration comes from
+
+| From the targeted project        | From the workspace root                |
+|----------------------------------|----------------------------------------|
+| `tool.pdm.dockerize`             | the `pdm.lock` lock file               |
+| `tool.pdm.scripts`               | the Python interpreter                 |
+| the dependencies and the groups  | the `tool.pdm.source` package indexes  |
+| the output directory             | the `use_uv` setting                   |
+
+**Nothing is inherited from the workspace root**: the `tool.pdm.dockerize` and
+`tool.pdm.scripts` sections of the root are ignored when targeting a member,
+and vice versa. A member `pdm.toml` is ignored too.
+
+> [!NOTE]
+> Selecting a group only defined in a member, using `--group`, is rejected:
+> the workspace lock file only records the groups of the workspace root.
 
 ## Internals
 

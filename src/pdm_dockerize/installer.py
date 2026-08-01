@@ -40,9 +40,11 @@ class DockerizeInstallManager(InstallManager):
         rename_pth: bool = False,
     ) -> None:
         super().__init__(environment, use_install_cache=use_install_cache, rename_pth=rename_pth)
-        settings: DockerizeSettings = self.environment.project.pyproject.settings.get(
-            "dockerize", {}
-        )
+        # A `DockerizeEnvironment` sources the settings from the targeted
+        # workspace member, which is not always the project owning the lock file.
+        settings: DockerizeSettings = getattr(
+            environment, "settings", None
+        ) or self.environment.project.pyproject.settings.get("dockerize", {})
         self.include = filters.parse(settings, "include_bins")
         self.exclude = filters.parse(settings, "exclude_bins")
 
@@ -119,6 +121,10 @@ class DockerizeUvSynchronizer:
     This bypasses PDM's Synchronizer/InstallManager pipeline entirely
     and invokes ``uv`` as a subprocess. After installation, scripts are
     moved from ``lib/bin/`` to ``bin/`` with include/exclude filtering applied.
+
+    ``project`` is the project owning the lock file: in a workspace, the root.
+    The settings are sourced from the environment, hence from the targeted
+    workspace member.
     """
 
     def __init__(
@@ -133,7 +139,7 @@ class DockerizeUvSynchronizer:
         self.environment = environment
         self.candidates = candidates
         self.dry_run = dry_run
-        settings: DockerizeSettings = project.pyproject.settings.get("dockerize", {})
+        settings: DockerizeSettings = environment.settings
         self.include_bins = filters.parse(settings, "include_bins")
         self.exclude_bins = filters.parse(settings, "exclude_bins")
 

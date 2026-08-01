@@ -28,6 +28,8 @@ if TYPE_CHECKING:
     from pdm.models.repositories.lock import LockedRepository
     from pdm.models.requirements import Requirement
 
+    from .config import DockerizeSettings
+
 
 def _split_combined_extras(req: Requirement, package_keys: set[str]) -> list[Requirement] | None:
     """Split a combined-extras requirement into single-extra requirements.
@@ -154,17 +156,35 @@ def _adapted_locked_repository(project: Project) -> Iterator[None]:
 
 
 class DockerizeEnvironment(PythonLocalEnvironment):
-    """An environment installaing into the dist/docker directory"""
+    """An environment installing into the dist/docker directory
+
+    In a workspace, ``project`` is always the workspace **root**, so that the
+    interpreter, the sources, the caches and the ``${PROJECT_ROOT}`` expansion
+    keep resolving against it, exactly like ``pdm install`` does.
+    ``member`` is the project the image is built for, and is only used for the
+    output directory and the ``tool.pdm.dockerize`` settings.
+    Outside a workspace, both are the same project.
+    """
 
     def __init__(
-        self, project: Project, *, target: str | None = None, python: str | None = None
+        self,
+        project: Project,
+        *,
+        member: Project | None = None,
+        target: str | None = None,
+        python: str | None = None,
     ) -> None:
         super().__init__(project, python=python)
+        self.member = member if member is not None else project
         self.target = Path(target) if target else None
 
     @property
     def packages_path(self) -> Path:
-        return self.target or self.project.root / "dist/docker"
+        return self.target or self.member.root / "dist/docker"
+
+    @property
+    def settings(self) -> DockerizeSettings:
+        return self.member.pyproject.settings.get("dockerize", {})
 
 
 class DockerizeCommand(BaseCommand):
@@ -183,45 +203,55 @@ class DockerizeCommand(BaseCommand):
     )
 
     def handle(self, project: Project, options: argparse.Namespace) -> None:
-        if (workspace := project.workspace_project) is not None:
-            # Workspace members share the root lockfile and environment, so a
-            # single image is built from the workspace root, like `pdm install`.
-            raise PdmUsageError(
-                f"`pdm dockerize` can only be run from the workspace root: {workspace.root}"
+        # Workspace members share the root lock file, environment and sources,
+        # but provide their own dependencies, scripts, settings and output.
+        # Outside a workspace, both are the very same project.
+        root = project.workspace_project or project
+        member = project
+
+        check_project_file(member)
+        actions.check_lockfile(root)
+        selection = GroupSelection.from_options(member, options)
+        hooks = HookManager(member)
+        env = DockerizeEnvironment(root, member=member, target=options.target)
+
+        if member is not root and not member.is_distribution:
+            project.core.ui.warn(
+                f"Workspace member {member.name} is not a distribution: "
+                "it is not installed and its sources are not exposed."
             )
-        check_project_file(project)
-        actions.check_lockfile(project)
-        selection = GroupSelection.from_options(project, options)
-        hooks = HookManager(project)
-        env = DockerizeEnvironment(project, target=options.target)
 
         requirements = []
         selection.validate()
         for group in selection:
-            requirements.extend(project.get_dependencies(group))
-        if "default" in selection:
-            # Workspace members are implicit `default` dependencies of the
-            # workspace root: mirror `pdm.cli.actions.do_lock`.
-            requirements = project.with_workspace_dependencies(requirements)
+            requirements.extend(member.get_dependencies(group))
+        if "default" in selection and member.is_workspace_root:
+            # Only the workspace root implicitly depends on every member:
+            # mirror `pdm.cli.actions.do_lock`.
+            # `iter_workspace_dependencies()` called on a member would return
+            # every member of the workspace, installing unrelated siblings.
+            requirements = root.with_workspace_dependencies(requirements)
         # Always use the resolvelib resolver to read from pdm.lock,
         # even when uv is configured as the project resolver.
         # UvResolver would run `uv lock` (a full re-resolution) which is
         # inappropriate here — we only need to read existing locked candidates.
-        config = cast(collections.ChainMap, project.config)
+        # `Project.config` is a per-instance property, so the override has to be
+        # applied to the very project performing the resolution.
+        config = cast(collections.ChainMap, root.config)
         config.maps.insert(0, {"use_uv": False})
         try:
-            with _adapted_locked_repository(project):
-                requirements = _adapt_requirements_for_lockfile(requirements, project)
-                candidates = actions.resolve_candidates_from_lockfile(project, requirements)
+            with _adapted_locked_repository(root):
+                requirements = _adapt_requirements_for_lockfile(requirements, root)
+                candidates = actions.resolve_candidates_from_lockfile(root, requirements)
         finally:
             config.maps.pop(0)
 
-        use_uv = project.config.get("use_uv", False)
+        use_uv = root.config.get("use_uv", False)
         if use_uv:
             try:
                 project.core.uv_cmd  # noqa: B018 — verify uv is available
                 synchronizer = DockerizeUvSynchronizer(
-                    project,
+                    root,
                     env,
                     candidates,
                     dry_run=options.dry_run,
@@ -246,7 +276,7 @@ class DockerizeCommand(BaseCommand):
 
         synchronizer.synchronize()
 
-        script = ProjectEntrypoint(project, hooks).as_script()
+        script = ProjectEntrypoint(member, hooks).as_script()
 
         if options.dry_run:
             project.core.ui.echo("Dry run: would write the following entrypoint script:")
@@ -254,5 +284,8 @@ class DockerizeCommand(BaseCommand):
             return
 
         entrypoint = env.packages_path / "entrypoint"
+        # The output directory is only created by the installers,
+        # which do not run when there is nothing to install
+        entrypoint.parent.mkdir(parents=True, exist_ok=True)
         entrypoint.write_text(script)
         os.chmod(entrypoint, 0o555)
