@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import json
 import shutil
 import subprocess
@@ -139,15 +140,23 @@ class DockerizeUvSynchronizer:
     def _build_package_specs(self) -> list[str]:
         """Convert resolved candidates to pinned pip-installable specs."""
         specs: list[str] = []
-        for key, candidate in self.candidates.items():
+        for candidate in self.candidates.values():
             req = candidate.req
             if req.is_named:
                 # Registry package: pin to exact version
-                pinned = req.as_pinned_version(candidate.version)
-                specs.append(pinned.as_line())
-            else:
-                # File/VCS/URL requirement: use as-is
-                specs.append(req.as_line())
+                specs.append(req.as_pinned_version(candidate.version).as_line())
+                continue
+            if req.editable:
+                # `uv` has no equivalent of PDM's `no_editable` and an editable
+                # line (`-e <url>#egg=<name>`) is not a single argv token.
+                # Rewrite it as a non-editable PEP 508 direct reference so the
+                # image stays self-contained (no `.pth` pointing at build paths).
+                # This is not done in place: candidates are shared with the
+                # `LockedRepository`, whose keys include `req.editable`.
+                req = dataclasses.replace(req, editable=False)
+            # Expand PDM's `file:///${PROJECT_ROOT}/...` (and hatch's `{root:uri}`)
+            # placeholders into a real absolute URL, as `LockedRepository` does.
+            specs.append(self.project.backend.expand_line(req.as_line()))
         return specs
 
     def _build_command(self, target: str) -> list[str]:

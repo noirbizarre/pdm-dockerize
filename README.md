@@ -274,6 +274,79 @@ This file will only be loaded in the docker entrypoint.
 env_file = "docker.env"
 ```
 
+## Workspaces
+
+[PDM workspaces](https://pdm-project.org/en/stable/usage/workspace/) (requires `pdm>=2.28`) are supported.
+
+Given a workspace root declaring its members:
+
+```text
+my-workspace/
+├── pyproject.toml          # [tool.pdm.workspace] members = ["packages/*"]
+├── pdm.lock                # a single, shared lockfile
+└── packages/
+    ├── api/pyproject.toml
+    └── worker/pyproject.toml
+```
+
+```toml
+[tool.pdm.workspace]
+members = ["packages/*"]
+
+[tool.pdm.dockerize]
+include = ["serve", "migrate"]
+include_bins = "*"
+
+[tool.pdm.scripts]
+serve = "uvicorn api.main:app --host 0.0.0.0"
+migrate = "alembic upgrade head"
+```
+
+running `pdm dockerize` from the workspace root installs every workspace member,
+along with their transitive dependencies, into the output directory,
+and exposes their console scripts (subject to `include_bins`/`exclude_bins`).
+
+Members are installed as regular (**non-editable**) packages,
+so the resulting image is self-contained and never references build-time host paths.
+
+### Running from the workspace root
+
+Like `pdm install`, `pdm lock` and `pdm sync`, the `dockerize` command must be run from the workspace root,
+since members share a single lockfile and a single environment:
+
+```console
+$ cd packages/api && pdm dockerize
+[PdmUsageError]: `pdm dockerize` can only be run from the workspace root: /path/to/my-workspace
+```
+
+Building one image per member is not supported: a workspace produces a single image.
+Use `include`/`exclude` to select which scripts that image exposes.
+
+### Configuration is read from the workspace root only
+
+**The `tool.pdm.dockerize` and `tool.pdm.scripts` sections are only read from the workspace root `pyproject.toml`.**
+Those sections are ignored in members.
+
+### Which members are included
+
+A member is installed when it is matched by `[tool.pdm.workspace] members`,
+has a `project.name` and is a distribution
+(ie. neither `distribution = false` nor `package-type = "application"`).
+
+Members are treated as implicit `default` group dependencies,
+so they are excluded by selections dropping that group, such as `--no-default`.
+
+### Dockerfile
+
+Members must be present in the build stage so their wheels can be built:
+make sure your `.dockerignore` does not exclude the members directory.
+
+```dockerfile
+COPY pyproject.toml pdm.lock ./
+COPY packages/ ./packages/
+RUN pdm dockerize
+```
+
 ## Internals
 
 This plugin works by subclassing some `pdm` classes to reuse the installation process:

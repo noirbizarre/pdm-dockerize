@@ -105,6 +105,13 @@ class ProjectEntrypoint:
     def get_package_dir(self) -> str | None:
         """An optional directory containing the project sources"""
         # TODO: find a better way to identify package-dir
+        if not self.project.is_distribution:
+            # A virtual/non-distribution project (eg. a workspace root) has no
+            # sources of its own: everything lives in `lib`.
+            # Without this guard, a project without a `[build-system]` table
+            # would be detected as `pdm.backend` (the default fallback backend)
+            # and a non-existing `src` directory could be added to `PYTHONPATH`.
+            return None
         build_system = self.project.backend.build_system()
         if not build_system.get("build-backend") == "pdm.backend":
             return None

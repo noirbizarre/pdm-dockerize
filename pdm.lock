@@ -5,7 +5,7 @@
 groups = ["default", "dev", "lint", "release", "test"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:ed2a3749d62b08b3ba39bc299d17bb9fa5d954bbcf38a64c8b84fe86387246f5"
+content_hash = "sha256:1ee0076f66b32be5fe869e7cfa858345b85341bba7a038b778ec6736aa2ad5d4"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -375,7 +375,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 summary = ""
 dependencies = [
-    "typing-extensions; python_full_version < \"3.13\"",
+    "typing-extensions",
 ]
 files = [
     {file = "exceptiongroup-1.3.1-py3-none-any.whl", hash = "sha256:a7a39a3bd276781e98394987d3a5701d0c4edffb633bb7a5144577f82c773598"},
@@ -871,7 +871,7 @@ files = [
 
 [[package]]
 name = "pdm"
-version = "2.27.0"
+version = "2.28.0"
 summary = ""
 dependencies = [
     "blinker",
@@ -899,23 +899,23 @@ dependencies = [
     "virtualenv",
 ]
 files = [
-    {file = "pdm-2.27.0-py3-none-any.whl", hash = "sha256:2f56c4a8f01809564430fb35e850c0b9f56f45e71f272b35dece4db0d558a3aa"},
-    {file = "pdm-2.27.0.tar.gz", hash = "sha256:dbfbc484065d0150fa5b29484ead908354313d8699cf74c099d4531826bd04de"},
+    {file = "pdm-2.28.0-py3-none-any.whl", hash = "sha256:c173f0a5801bccdec73944abe86288acd90ca2eebaeded503d7511586d2b6a27"},
+    {file = "pdm-2.28.0.tar.gz", hash = "sha256:ca7d21548955086985070d2fe4334a55e59093a466b25eebc6bb0769a0539e89"},
 ]
 
 [[package]]
 name = "pdm"
-version = "2.27.0"
+version = "2.28.0"
 extras = ["pytest"]
 summary = ""
 dependencies = [
-    "pdm==2.27.0",
+    "pdm==2.28.0",
     "pytest",
     "pytest-mock",
 ]
 files = [
-    {file = "pdm-2.27.0-py3-none-any.whl", hash = "sha256:2f56c4a8f01809564430fb35e850c0b9f56f45e71f272b35dece4db0d558a3aa"},
-    {file = "pdm-2.27.0.tar.gz", hash = "sha256:dbfbc484065d0150fa5b29484ead908354313d8699cf74c099d4531826bd04de"},
+    {file = "pdm-2.28.0-py3-none-any.whl", hash = "sha256:c173f0a5801bccdec73944abe86288acd90ca2eebaeded503d7511586d2b6a27"},
+    {file = "pdm-2.28.0.tar.gz", hash = "sha256:ca7d21548955086985070d2fe4334a55e59093a466b25eebc6bb0769a0539e89"},
 ]
 
 [[package]]

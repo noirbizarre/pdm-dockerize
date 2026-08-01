@@ -8,6 +8,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from installer.destinations import Scheme
 from installer.records import RecordEntry
+from pdm.models.backends import PDMBackend
+from pdm.models.requirements import parse_requirement
+from pdm.utils import cd
 
 from pdm_dockerize.installer import DockerizeUvSynchronizer, FilteringDestination
 
@@ -263,10 +266,11 @@ def _make_named_candidate(name: str, version: str, pinned_line: str) -> MagicMoc
     return candidate
 
 
-def _make_url_candidate(line: str) -> MagicMock:
+def _make_url_candidate(line: str, *, editable: bool = False) -> MagicMock:
     """Create a mock candidate representing a file/VCS/URL requirement."""
     candidate = MagicMock()
     candidate.req.is_named = False
+    candidate.req.editable = editable
     candidate.req.as_line.return_value = line
     return candidate
 
@@ -292,6 +296,8 @@ def _make_uv_synchronizer(
     project.core.uv_cmd = ["uv"]
     project.sources = sources or []
     project.root = tmp_path
+    # `expand_line` is a no-op on already expanded lines
+    project.backend.expand_line.side_effect = lambda line: line
 
     environment = MagicMock()
     environment.packages_path = tmp_path / "packages"
@@ -341,6 +347,99 @@ class TestBuildPackageSpecs:
     def test_empty_candidates(self, tmp_path: Path):
         sync = _make_uv_synchronizer(tmp_path, candidates={})
         assert sync._build_package_specs() == []
+
+
+def _make_local_candidate(root: Path, line: str, editable: bool = False) -> MagicMock:
+    """Create a candidate holding a *real* relocated local `Requirement`."""
+    member = root / "packages" / "foo"
+    member.mkdir(parents=True, exist_ok=True)
+    with cd(root):
+        req = parse_requirement(line, editable)
+        req.relocate(PDMBackend(root))
+    req.name = "foo"
+    candidate = MagicMock()
+    candidate.req = req
+    return candidate
+
+
+class TestBuildPackageSpecsLocalRequirements:
+    """`uv pip install` cannot consume editable lines nor PDM placeholders.
+
+    These use real `Requirement` objects: mocks cannot exercise the
+    `dataclasses.replace()`/`as_line()` interaction which is the whole point.
+    """
+
+    def test_editable_local_dir(self, tmp_path: Path):
+        candidate = _make_local_candidate(tmp_path, "./packages/foo", editable=True)
+        # Precondition: the raw line is unusable as a single argv token
+        assert candidate.req.as_line().startswith("-e file:///${PROJECT_ROOT}")
+
+        sync = _make_uv_synchronizer(tmp_path, candidates={"foo": candidate})
+        sync.project.backend = PDMBackend(tmp_path)
+
+        (spec,) = sync._build_package_specs()
+
+        assert spec == f"foo @ {(tmp_path / 'packages' / 'foo').as_uri()}"
+        assert not spec.startswith("-e ")
+        assert "${PROJECT_ROOT}" not in spec
+        assert "#egg=" not in spec
+        # The shared candidate requirement must not have been mutated
+        assert candidate.req.editable is True
+
+    def test_non_editable_local_dir_is_expanded(self, tmp_path: Path):
+        candidate = _make_local_candidate(tmp_path, "./packages/foo")
+        sync = _make_uv_synchronizer(tmp_path, candidates={"foo": candidate})
+        sync.project.backend = PDMBackend(tmp_path)
+
+        (spec,) = sync._build_package_specs()
+
+        assert spec == f"foo @ {(tmp_path / 'packages' / 'foo').as_uri()}"
+
+    def test_extras_are_preserved(self, tmp_path: Path):
+        candidate = _make_local_candidate(tmp_path, "./packages/foo", editable=True)
+        candidate.req.extras = ("cli",)
+        sync = _make_uv_synchronizer(tmp_path, candidates={"foo": candidate})
+        sync.project.backend = PDMBackend(tmp_path)
+
+        (spec,) = sync._build_package_specs()
+
+        assert spec.startswith("foo[cli] @ file://")
+
+    def test_marker_is_preserved(self, tmp_path: Path):
+        candidate = _make_local_candidate(tmp_path, "./packages/foo", editable=True)
+        candidate.req.marker = parse_requirement('foo; python_version >= "3.10"').marker
+        sync = _make_uv_synchronizer(tmp_path, candidates={"foo": candidate})
+        sync.project.backend = PDMBackend(tmp_path)
+
+        (spec,) = sync._build_package_specs()
+
+        assert not spec.startswith("-e ")
+        assert 'python_version >= "3.10"' in spec
+
+    def test_subdirectory_is_preserved(self, tmp_path: Path):
+        candidate = _make_local_candidate(tmp_path, "./packages/foo", editable=True)
+        candidate.req.subdirectory = "sub"
+        sync = _make_uv_synchronizer(tmp_path, candidates={"foo": candidate})
+        sync.project.backend = PDMBackend(tmp_path)
+
+        (spec,) = sync._build_package_specs()
+
+        assert spec.endswith("#subdirectory=sub")
+        assert "#egg=" not in spec
+
+    def test_editable_vcs(self, tmp_path: Path):
+        req = parse_requirement("git+https://github.com/user/repo.git@main#egg=foo", True)
+        candidate = MagicMock()
+        candidate.req = req
+
+        sync = _make_uv_synchronizer(tmp_path, candidates={"foo": candidate})
+        sync.project.backend = PDMBackend(tmp_path)
+
+        (spec,) = sync._build_package_specs()
+
+        assert not spec.startswith("-e ")
+        assert spec.startswith("foo @ git+https://github.com/user/repo.git")
+        assert req.editable is True
 
 
 class TestBuildCommand:
