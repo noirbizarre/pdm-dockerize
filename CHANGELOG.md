@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## 🚀 0.8.0 (2026-08-01)
+
+### 💫 New features
+
+- **workspace**: build an image for a single workspace member
+- **workspace**: support PDM workspaces
+
+### 🐛 Bug fixes
+
+- **dockerize**: create the output directory when there is nothing to install
+- **entrypoint**: do not add a package dir for non-distribution projects
+- **uv**: install editable and local path requirements correctly
+- **workspace**: restore the member paths lost by uv lock files
+
+### 📖 Documentation
+
+- **README**: document single member images
+- **README**: document workspace support
+
+### 🧹 Chores
+
+- **deps**: require pdm>=2.28
+
+
 ## 🚀 0.7.3 (2026-07-31)
 
 ### 🐛 Bug fixes
