@@ -168,6 +168,32 @@ def test_pythonpath_implicit_src_layout(project: Project, snapshot: SnapshotAsse
     assert entrypoint_for(project) == snapshot
 
 
+def test_pythonpath_skips_src_for_non_distribution(project: Project):
+    """A `distribution = false` project has no sources of its own."""
+    project.pyproject._data["build-system"] = {
+        "requires": ["pdm-backend"],
+        "build-backend": "pdm.backend",
+    }
+    project.pyproject.settings["distribution"] = False
+    (project.root / "src").mkdir(parents=True, exist_ok=True)
+
+    assert ProjectEntrypoint(project, HookManager(project)).get_package_dir() is None
+    assert '"$(pwd)/src"' not in entrypoint_for(project)
+
+
+def test_pythonpath_skips_src_for_virtual_project(project: Project):
+    """A project without a `[project]` table (eg. a workspace root) has no sources.
+
+    Without an explicit `[build-system]`, `pdm` falls back to `pdm.backend`,
+    so a stray `src` directory would otherwise be added to `PYTHONPATH`.
+    """
+    del project.pyproject._data["project"]
+    (project.root / "src").mkdir(parents=True, exist_ok=True)
+
+    assert ProjectEntrypoint(project, HookManager(project)).get_package_dir() is None
+    assert '"$(pwd)/src"' not in entrypoint_for(project)
+
+
 def test_global_env(
     project: Project,
     snapshot: SnapshotAssertion,
