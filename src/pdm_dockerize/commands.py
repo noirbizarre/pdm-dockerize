@@ -102,6 +102,33 @@ def _adapt_locked_dependencies(repo: LockedRepository) -> None:
             package.dependencies[:] = adapted
 
 
+def _adapt_locked_members(repo: LockedRepository, members: dict[str, Requirement]) -> None:
+    """Restore the local path of the workspace members in a locked repository.
+
+    ``uv`` generated lock files store workspace members without their location
+    (only a name, a version and the editable flag), so they are read back as
+    named requirements, which can never be matched against the local path
+    requirements the workspace root implicitly depends on.
+
+    Members are given their path requirement back, and the packages are re-keyed
+    accordingly, as the candidate identity depends on it.
+    """
+    if not members:
+        return
+    packages: dict = {}
+    changed = False
+    for key, package in repo.packages.items():
+        candidate = package.candidate
+        req = members.get(candidate.identify())
+        if req is not None and candidate.req.is_named:
+            package = dataclasses.replace(package, candidate=candidate.copy_with(req))
+            changed = True
+            key = repo._identify_candidate(package.candidate)
+        packages[key] = package
+    if changed:
+        repo.packages = packages
+
+
 @contextlib.contextmanager
 def _adapted_locked_repository(project: Project) -> Iterator[None]:
     """Adapt every :class:`LockedRepository` built by ``project`` in this context.
@@ -111,10 +138,12 @@ def _adapted_locked_repository(project: Project) -> Iterator[None]:
     inside the resolution, so the adaptation is injected at the source.
     """
     original = project.get_locked_repository
+    members = {req.identify(): req for req in project.iter_workspace_dependencies()}
 
     def get_locked_repository(*args, **kwargs) -> LockedRepository:
         repo = original(*args, **kwargs)
         _adapt_locked_dependencies(repo)
+        _adapt_locked_members(repo, members)
         return repo
 
     project.get_locked_repository = get_locked_repository  # type: ignore[method-assign]

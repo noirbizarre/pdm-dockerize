@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 from packaging.specifiers import SpecifierSet
-from pdm.models.requirements import NamedRequirement, Requirement
+from pdm.models.backends import PDMBackend
+from pdm.models.candidates import Candidate
+from pdm.models.repositories.lock import LockedRepository, Package
+from pdm.models.requirements import NamedRequirement, Requirement, parse_requirement
+from pdm.utils import cd
 
 from pdm_dockerize.commands import (
     _adapt_locked_dependencies,
+    _adapt_locked_members,
     _adapt_requirements_for_lockfile,
     _adapted_locked_repository,
 )
@@ -277,6 +283,9 @@ class TestAdaptedLockedRepository:
         def __init__(self, repo: MagicMock | None = None) -> None:
             self.repo = repo
 
+        def iter_workspace_dependencies(self) -> list[Requirement]:
+            return []
+
         def get_locked_repository(self, *args, **kwargs) -> MagicMock | None:
             return self.repo
 
@@ -299,3 +308,70 @@ class TestAdaptedLockedRepository:
             raise RuntimeError("boom")
 
         assert "get_locked_repository" not in vars(project)
+
+
+class TestAdaptLockedMembers:
+    """Tests for _adapt_locked_members()."""
+
+    @staticmethod
+    def _member_req(tmp_path: Path, name: str = "member-a") -> Requirement:
+        """The path requirement a workspace root implicitly depends on."""
+        (tmp_path / name).mkdir(parents=True, exist_ok=True)
+        with cd(tmp_path):
+            req = parse_requirement(f"./{name}", True)
+            req.relocate(PDMBackend(tmp_path))
+        req.name = name
+        return req
+
+    @staticmethod
+    def _repo(candidate: Candidate) -> LockedRepository:
+        repo = MagicMock(spec=LockedRepository)
+        repo.packages = {("member-a", "0.1.0", None, True): Package(candidate, ["faker"])}
+        repo._identify_candidate = lambda can: (
+            can.identify(),
+            None,
+            can.link.url,
+            can.req.editable,
+        )
+        return repo
+
+    def test_named_member_gets_its_path_back(self, tmp_path: Path):
+        """`uv` lock files store members as a bare name/version/editable triplet."""
+        req = self._member_req(tmp_path)
+        # As read back from a `uv` generated lock file: no path, no url
+        locked = Candidate(NamedRequirement(name="member-a", editable=True), version="0.1.0")
+        repo = self._repo(locked)
+
+        _adapt_locked_members(repo, {"member-a": req})
+
+        (key,) = repo.packages
+        package = repo.packages[key]
+        assert not package.candidate.req.is_named
+        assert package.candidate.req.editable
+        assert package.candidate.req.absolute_path == tmp_path / "member-a"
+        # `${PROJECT_ROOT}` is expanded by `LockedRepository._identify_candidate`
+        assert package.candidate.link.url == "file:///${PROJECT_ROOT}/member-a"
+        # The package is re-keyed on its new identity, and its dependencies kept
+        assert key == ("member-a", None, "file:///${PROJECT_ROOT}/member-a", True)
+        assert package.dependencies == ["faker"]
+
+    def test_path_member_is_left_untouched(self, tmp_path: Path):
+        """Lock files keeping the member path need no adaptation."""
+        req = self._member_req(tmp_path)
+        locked = Candidate(req, version="0.1.0")
+        repo = self._repo(locked)
+        before = dict(repo.packages)
+
+        _adapt_locked_members(repo, {"member-a": req})
+
+        assert repo.packages == before
+
+    def test_without_members_is_a_noop(self, tmp_path: Path):
+        """A project without workspace members is not affected."""
+        locked = Candidate(NamedRequirement(name="member-a", editable=True), version="0.1.0")
+        repo = self._repo(locked)
+        before = dict(repo.packages)
+
+        _adapt_locked_members(repo, {})
+
+        assert repo.packages == before
