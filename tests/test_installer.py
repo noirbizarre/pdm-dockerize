@@ -290,9 +290,6 @@ def _make_uv_synchronizer(
         dockerize_settings["include_bins"] = include_bins
     if exclude_bins is not None:
         dockerize_settings["exclude_bins"] = exclude_bins
-    project.pyproject.settings.get.side_effect = lambda key, default=None: (
-        dockerize_settings if key == "dockerize" else default
-    )
     project.core.uv_cmd = ["uv"]
     project.sources = sources or []
     project.root = tmp_path
@@ -302,6 +299,8 @@ def _make_uv_synchronizer(
     environment = MagicMock()
     environment.packages_path = tmp_path / "packages"
     environment.interpreter.executable = "/usr/bin/python3"
+    # Settings are sourced from the environment, hence from the targeted member
+    environment.settings = dockerize_settings
 
     return DockerizeUvSynchronizer(
         project=project,

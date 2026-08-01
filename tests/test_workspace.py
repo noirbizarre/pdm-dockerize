@@ -140,17 +140,17 @@ def test_no_default_excludes_members(workspace: Project, pdm: PDMCallable) -> No
     assert not (lib / "member_b").exists()
 
 
-def test_dockerize_from_a_member_fails(workspace: Project, pdm: PDMCallable) -> None:
-    """A single image is built from the workspace root, like `pdm install`"""
-    pdm("lock", obj=workspace, strict=True)
+def test_dockerize_from_a_member_targets_the_member(
+    workspace: Project, pdm: PDMCallable
+) -> None:
+    """Running from a member builds that member image, not the workspace one"""
+    pdm("lock", obj=workspace, strict=True, cleanup=False)
     member = workspace.core.create_project(workspace.root / "packages/member-a")
 
-    result = pdm("dockerize", obj=member)
+    pdm("dockerize -v", obj=member, strict=True)
 
-    assert result.exit_code != 0
-    output = result.stderr + result.output
-    assert "can only be run from the workspace root" in output
-    assert str(workspace.root) in output
+    assert (member.root / "dist/docker/entrypoint").is_file()
+    assert not (workspace.root / "dist/docker").exists()
 
 
 def test_dockerize_outside_a_workspace_is_unaffected(
