@@ -254,5 +254,8 @@ class DockerizeCommand(BaseCommand):
             return
 
         entrypoint = env.packages_path / "entrypoint"
+        # The output directory is only created by the installers,
+        # which do not run when there is nothing to install
+        entrypoint.parent.mkdir(parents=True, exist_ok=True)
         entrypoint.write_text(script)
         os.chmod(entrypoint, 0o555)
