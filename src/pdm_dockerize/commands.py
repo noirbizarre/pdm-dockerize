@@ -154,6 +154,12 @@ class DockerizeCommand(BaseCommand):
     )
 
     def handle(self, project: Project, options: argparse.Namespace) -> None:
+        if (workspace := project.workspace_project) is not None:
+            # Workspace members share the root lockfile and environment, so a
+            # single image is built from the workspace root, like `pdm install`.
+            raise PdmUsageError(
+                f"`pdm dockerize` can only be run from the workspace root: {workspace.root}"
+            )
         check_project_file(project)
         actions.check_lockfile(project)
         selection = GroupSelection.from_options(project, options)
@@ -164,6 +170,10 @@ class DockerizeCommand(BaseCommand):
         selection.validate()
         for group in selection:
             requirements.extend(project.get_dependencies(group))
+        if "default" in selection:
+            # Workspace members are implicit `default` dependencies of the
+            # workspace root: mirror `pdm.cli.actions.do_lock`.
+            requirements = project.with_workspace_dependencies(requirements)
         # Always use the resolvelib resolver to read from pdm.lock,
         # even when uv is configured as the project resolver.
         # UvResolver would run `uv lock` (a full re-resolution) which is
